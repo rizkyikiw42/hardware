@@ -24,9 +24,11 @@ module dct_1d
    logic signed [10:0] e_in;
    logic signed [11:0] f_in;
 
-   logic signed [21:0] m_out;
+   logic signed [19:0] m_tmp;
+   logic signed [10:0] m_out;
    logic signed [10:0] m_in[2];
-   assign m_out = m_in[0] * m_in[1];
+   assign m_tmp = m_in[0] * m_in[1];
+   assign m_out = m_tmp[19:9];
 
    // Constants (all in two's complement Q1.9 format)
    localparam [10:0] m1 = 11'h16a; // m1 = cos(4 π / 16)
