@@ -8,12 +8,12 @@ module dct_1d
    logic shiftout;
    assign shiftout = state == 7;
 
-   logic signed [7:0] [7:0]  a;
-   logic signed [7:0] [8:0]  b;
-   logic signed [7:0] [9:0]  c;
-   logic signed [8:0] [10:0] d;
-   logic signed [8:0] [10:0] e;
-   logic signed [7:0] [11:0] f;
+   logic signed [7:0]  a[8];
+   logic signed [8:0]  b[8];
+   logic signed [9:0]  c[8];
+   logic signed [10:0] d[8];
+   logic signed [10:0] e[8];
+   logic signed [11:0] f[8];
 
    logic signed [10:0] d_8;
    logic signed [10:0] e_8;
@@ -24,9 +24,11 @@ module dct_1d
    logic signed [10:0] e_in;
    logic signed [11:0] f_in;
 
-   logic signed [21:0] m_out;
+   logic signed [19:0] m_tmp;
+   logic signed [10:0] m_out;
    logic signed [10:0] m_in[2];
-   assign m_out = m_in[0] * m_in[1];
+   assign m_tmp = m_in[0] * m_in[1];
+   assign m_out = m_tmp[19:9];
 
    // Constants (all in two's complement Q1.9 format)
    localparam [10:0] m1 = 11'h16a; // m1 = cos(4 π / 16)
@@ -34,12 +36,16 @@ module dct_1d
    localparam [10:0] m3 = 11'h115; // m3 = cos(2 π / 16) - cos(6 π / 16)
    localparam [10:0] m4 = 11'h29c; // m4 = cos(2 π / 16) + cos(6 π / 16)
 
-   pingpong_buffer #(8)  BUF_A(.in(a_in), .out(a), .*);
-   pingpong_buffer #(9)  BUF_B(.in(b_in), .out(b), .*);
-   pingpong_buffer #(10) BUF_C(.in(c_in), .out(c), .*);
-   pingpong_buffer #(10) BUF_D(.in(d_in), .out(d), .*);
-   pingpong_buffer #(11) BUF_E(.in(e_in), .out(e), .*);
-   pingpong_buffer #(11) BUF_F(.in(f_in), .out(f), .*);
+   // SystemVerilog interprets signed packed arrays as if the entire
+   // vector were signed.  WAT.  Have to use unpacked arrays instead.
+   // Quartus doesn't support the streaming operator to convert
+   // automatically, so we have to do it by hand.
+   pingpong_buffer #(8)  BUF_A(.in(a_in), .out('{a[7], a[6], a[5], a[4], a[3], a[2], a[1], a[0]}), .*);
+   pingpong_buffer #(9)  BUF_B(.in(b_in), .out('{b[7], b[6], b[5], b[4], b[3], b[2], b[1], b[0]}), .*);
+   pingpong_buffer #(10) BUF_C(.in(c_in), .out('{c[7], c[6], c[5], c[4], c[3], c[2], c[1], c[0]}), .*);
+   pingpong_buffer #(11) BUF_D(.in(d_in), .out('{d[7], d[6], d[5], d[4], d[3], d[2], d[1], d[0]}), .*);
+   pingpong_buffer #(11) BUF_E(.in(e_in), .out('{e[7], e[6], e[5], e[4], e[3], e[2], e[1], e[0]}), .*);
+   pingpong_buffer #(12) BUF_F(.in(f_in), .out('{f[7], f[6], f[5], f[4], f[3], f[2], f[1], f[0]}), .*);
 
    always_ff @(posedge clk)
      if (rst)
