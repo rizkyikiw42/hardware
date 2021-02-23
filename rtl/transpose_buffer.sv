@@ -6,6 +6,7 @@ module transpose_buffer
   logic wren, wbuf, rbuf;
   logic [2:0] xw, yw, xr, yr;
 
+  assign rbuf = ~wbuf;
   assign waddr = {wbuf, yw, xw};    // For writing in row-major order
   assign raddr = {rbuf, xr, yr};    // For reading in column-major order
 
@@ -14,19 +15,34 @@ module transpose_buffer
   enum {START, NEXT, SWITCH} state;
 
   always_ff @(posedge clk) begin
-    if (rst)
+    if (rst) begin
       state <= START;
+      wren <= 0;
+    end
+
     if (ena_in) begin
       case (state)
         START: begin
-          
+          wbuf <= 0;
+          {xw, yw, xr, yr} <= 0;
+          wren <= 1;
+          state <= NEXT;
         end // START
         NEXT: begin
-          
+          if ({yw, xw} == 6'b111111 && {xr, yr} == 6'b111111) state <= SWITCH;
+          if (xw <= 3'b111) yw <= yw + 1;
+          if (yr <= 3'b111) xr <= xr + 1;
+          xw <= xw + 1;
+          yr <= yr + 1;
         end // NEXT
         SWITCH: begin
-          
-        end// SWITCH
+          wbuf <= ~wbuf;
+          xw <= 0;
+          yw <= 0;
+          xr <= 0;
+          yr <= 0;
+          state <= NEXT;
+        end // SWITCH
       endcase
     end // if (ena_in)
   end // always_ff
