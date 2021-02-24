@@ -10,7 +10,7 @@ module transpose_buffer
   assign waddr = {wbuf, yw, xw};    // For writing in row-major order
   assign raddr = {rbuf, xr, yr};    // For reading in column-major order
 
-  buf_mem buff (clk, ena_in, S_in, S_out, raddr, waddr, wren);
+  buf_mem buff (clk, S_in, S_out, raddr, waddr, wren);
 
   enum {START, NEXT, SWITCH} state;
 
@@ -21,11 +21,12 @@ module transpose_buffer
     end
 
     if (ena_in) begin
+      wren <= 1;
+
       case (state)
         START: begin
           wbuf <= 0;
           {xw, yw, xr, yr} <= 0;
-          wren <= 1;
           state <= NEXT;
         end // START
         NEXT: begin
@@ -37,14 +38,12 @@ module transpose_buffer
         end // NEXT
         SWITCH: begin
           wbuf <= ~wbuf;
-          xw <= 0;
-          yw <= 0;
-          xr <= 0;
-          yr <= 0;
           state <= NEXT;
         end // SWITCH
       endcase
     end // if (ena_in)
+
+    else wren <= 0;
   end // always_ff
 
 endmodule // transpose_buffer

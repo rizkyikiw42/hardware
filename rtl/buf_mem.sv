@@ -10,8 +10,8 @@ module buf_mem
 
   assign xr = raddr[5:3];   // Read x coordinate
   assign yr = raddr[2:0];   // Read y coordinate
-  assign xw = waddr[5:3];   // Write x coordinate
-  assign yw = waddr[2:0];   // Write y coordinate
+  assign yw = waddr[5:3];   // Write x coordinate
+  assign xw = waddr[2:0];   // Write y coordinate
 
   always_ff @(posedge clk) begin
     if (wren) begin
