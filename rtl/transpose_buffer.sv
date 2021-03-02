@@ -1,5 +1,5 @@
 module transpose_buffer
-  (input logic clk, input logic rst, input logic ena_in,
+  (input logic CLOCK_50, input logic rst, input logic ena_in,
     input logic [11:0] S_in, output logic [11:0] S_out);
 
   logic [6:0] waddr, raddr;
@@ -10,11 +10,11 @@ module transpose_buffer
   assign waddr = {wbuf, yw, xw};    // For writing in row-major order
   assign raddr = {rbuf, xr, yr};    // For reading in column-major order
 
-  buf_mem buff (clk, S_in, S_out, raddr, waddr, wren);
+  buf_mem buff (CLOCK_50, S_in, S_out, raddr, waddr, wren);
 
   enum {START, NEXT} state;
 
-  always_ff @(posedge clk) begin
+  always_ff @(posedge CLOCK_50) begin
     if (rst) begin
       state <= START;
       wren <= 0;
