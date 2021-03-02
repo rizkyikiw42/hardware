@@ -16,25 +16,25 @@ module dct_1d
    logic signed [W_IN-1:0]  a[8];
    logic signed [W_IN:0]    b[8];
    logic signed [W_IN+1:0]  c[8];
-   logic signed [W_IN+1:0]  d[8];
-   logic signed [W_OUT-1:0] e[8];
+   logic signed [W_IN+2:0]  d[8];
+   logic signed [W_IN+2:0]  e[8];
    logic signed [W_OUT-1:0] f[8];
 
-   logic signed [W_IN+1:0]  d_8;
-   logic signed [W_OUT-1:0] e_8;
+   logic signed [W_IN+2:0] d_8;
+   logic signed [W_IN+2:0] e_8;
 
    logic signed [W_IN:0]    b_in;
    logic signed [W_IN+1:0]  c_in;
-   logic signed [W_IN+1:0]  d_in;
-   logic signed [W_OUT-1:0] e_in;
+   logic signed [W_IN+2:0]  d_in;
+   logic signed [W_IN+2:0]  e_in;
    logic signed [W_OUT-1:0] f_in;
 
     // Input coefficient is Q10.0, constant is Q1.9, result is Q10.9.
    logic signed [2*(W_IN+2)-1:0] m_tmp;
-   logic signed [W_IN+1:0] m_out;
-   logic signed [W_IN+1:0] m_in[2];
+   logic signed [W_IN+2:0] m_out;
+   logic signed [W_IN+2:0] m_in[2];
    assign m_tmp = m_in[0] * m_in[1];
-   assign m_out = m_tmp[2*(W_IN+2)-1:W_IN+1];
+   assign m_out = m_tmp[2*(W_IN+2)-1:W_IN+1] + m_tmp[W_IN];
 
    localparam real PI = $acos(-1);
 
@@ -49,8 +49,8 @@ module dct_1d
    pingpong_buffer #(W_IN)   BUF_A(.in(a_in), .out('{a[7], a[6], a[5], a[4], a[3], a[2], a[1], a[0]}), .*);
    pingpong_buffer #(W_IN+1) BUF_B(.in(b_in), .out('{b[7], b[6], b[5], b[4], b[3], b[2], b[1], b[0]}), .*);
    pingpong_buffer #(W_IN+2) BUF_C(.in(c_in), .out('{c[7], c[6], c[5], c[4], c[3], c[2], c[1], c[0]}), .*);
-   pingpong_buffer #(W_IN+2) BUF_D(.in(d_in), .out('{d[7], d[6], d[5], d[4], d[3], d[2], d[1], d[0]}), .*);
-   pingpong_buffer #(W_OUT)  BUF_E(.in(e_in), .out('{e[7], e[6], e[5], e[4], e[3], e[2], e[1], e[0]}), .*);
+   pingpong_buffer #(W_IN+3) BUF_D(.in(d_in), .out('{d[7], d[6], d[5], d[4], d[3], d[2], d[1], d[0]}), .*);
+   pingpong_buffer #(W_IN+3) BUF_E(.in(e_in), .out('{e[7], e[6], e[5], e[4], e[3], e[2], e[1], e[0]}), .*);
    pingpong_buffer #(W_OUT)  BUF_F(.in(f_in), .out('{f[7], f[6], f[5], f[4], f[3], f[2], f[1], f[0]}), .*);
 
    always_ff @(posedge clk)
