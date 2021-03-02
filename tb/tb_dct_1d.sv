@@ -4,7 +4,7 @@ module tb_dct_1d();
    logic clk, rst, ena_in;
    logic signed [7:0] a_in;
    logic signed [11:0] S_out;
-   
+
    dct_1d DUT(.*);
 
    localparam int testblock[8][8] = '{
@@ -25,6 +25,7 @@ module tb_dct_1d();
 
    task dct_test(input int a[8][8]);
       real S[8][8];
+      real diff;
       for (int i = 0; i < 8; i++)
         S[i] = dct_approx(a[i]);
 
@@ -45,8 +46,12 @@ module tb_dct_1d();
             #96;
             for (int row = 0; row < 8; row++)
               for (int col = 0; col < 8; col++) begin
-                 $display("computed = %f", S[row][col]);
-                 $display("S[%d][%d] = %d", row, col, S_out); #2;
+                 diff = S[row][col] - S_out;
+                 // 1% tolerance
+                 assert (diff <= 2 && diff >= -2)
+                   else $error("Computed S[%d][%d] = %f, got %d",
+                               row, col, S[row][col], S_out);
+                 #2;
               end
          end
       join
@@ -58,5 +63,6 @@ module tb_dct_1d();
       #2;
       rst = 0;
       dct_test(testblock);
+      $stop;
    end
 endmodule // tb_dct_1d

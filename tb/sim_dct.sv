@@ -9,7 +9,7 @@ package sim_dct;
    typedef real vec8[8];
 
    function vec8 dct_approx(int a[8]);
-      vec8 b, c, d, e, f, S;
+      real b[8], c[8], d[9], e[9], f[8], S[8];
       b[0] = a[0] + a[7];
       b[1] = a[1] + a[6];
       b[2] = a[2] - a[4];
