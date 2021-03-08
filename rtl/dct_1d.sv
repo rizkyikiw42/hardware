@@ -29,20 +29,20 @@ module dct_1d
    logic signed [W_IN+2:0]  e_in;
    logic signed [W_OUT-1:0] f_in;
 
-    // Input coefficient is Q10.0, constant is Q1.9, result is Q10.9.
-   logic signed [2*(W_IN+2)-1:0] m_tmp;
-   logic signed [W_IN+2:0] m_out;
-   logic signed [W_IN+2:0] m_in[2];
-   assign m_tmp = m_in[0] * m_in[1];
-   assign m_out = m_tmp[2*(W_IN+2)-1:W_IN+1] + m_tmp[W_IN];
+   // Constants (all in two's complement Q1.(CONST_PREC-1) format)
+   localparam int CONST_PREC = 13;
+   localparam signed [CONST_PREC-1:0] m1 = 13'sh05a8;
+   localparam signed [CONST_PREC-1:0] m2 = 13'sh0310;
+   localparam signed [CONST_PREC-1:0] m3 = 13'sh0454;
+   localparam signed [CONST_PREC-1:0] m4 = 13'sh0a74;
 
-   localparam real PI = $acos(-1);
-
-   // Constants (all in two's complement Q1.9 format)
-   localparam [W_IN+2:0] m1 = signed'($cos(4 * PI / 16) * 2**9); // m1 = cos(4 π / 16)
-   localparam [W_IN+2:0] m2 = signed'($cos(6 * PI / 16) * 2**9); // m2 = cos(6 π / 16)
-   localparam [W_IN+2:0] m3 = signed'(($cos(2 * PI / 16) - $cos(6 * PI / 16)) * 2**9); // m3 = cos(2 π / 16) - cos(6 π / 16)
-   localparam [W_IN+2:0] m4 = signed'(($cos(2 * PI / 16) + $cos(6 * PI / 16)) * 2**9); // m4 = cos(2 π / 16) + cos(6 π / 16)
+   // Input coefficient is W_IN+3 wide
+   logic signed [W_IN+2+CONST_PREC:0] m_tmp;
+   logic signed [W_IN+3:0] m_out;
+   logic signed [W_IN+2:0] m_in;
+   logic signed [CONST_PREC-1:0] m_const;
+   assign m_tmp = m_in * m_const;
+   assign m_out = m_tmp[W_IN+2+CONST_PREC:CONST_PREC-3] + m_tmp[CONST_PREC-4];
 
    // SystemVerilog interprets signed packed arrays as if the entire
    // vector were signed, so we use unpacked arrays instead.
@@ -104,12 +104,12 @@ module dct_1d
       case (state)
         0: e_in = d[0];
         1: e_in = d[1];
-        2: begin e_in = m_out; m_in = '{m3, d[2]}; end
-        3: begin e_in = m_out; m_in = '{m1, d[7]}; end
-        4: begin e_in = m_out; m_in = '{m4, d[6]}; end
+        2: begin e_in = m_out; m_in = d[2]; m_const = m3; end
+        3: begin e_in = m_out; m_in = d[7]; m_const = m1; end
+        4: begin e_in = m_out; m_in = d[6]; m_const = m4; end
         5: e_in = d[5];
-        6: begin e_in = m_out; m_in = '{m1, d[3]}; end
-        7: begin e_in = m_out; m_in = '{m2, d[4]}; end
+        6: begin e_in = m_out; m_in = d[3]; m_const = m1; end
+        7: begin e_in = m_out; m_in = d[4]; m_const = m2; end
       endcase // case (state)
 
       case (state)
