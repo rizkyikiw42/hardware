@@ -3,11 +3,14 @@
 //   Pipelined Fast 2-D DCT Architecture for JPEG Image Compression
 //   (L. Agostini, I. Silva, S. Bampi, 2001)
 module dct_1d
-  #(parameter W_IN=8,
-    parameter W_OUT=12)
-   (input logic clk, rst, ena_in,
-    input logic [W_IN-1:0]   a_in,
-    output logic [W_OUT-1:0] S_out);
+  #(parameter STAGE=0)
+   (clk, rst, ena_in, a_in, S_out);
+   localparam int W_IN = STAGE == 0 ? 8 : 12;
+   localparam int W_OUT = STAGE == 0 ? 12 : 15;
+
+   input logic clk, rst, ena_in;
+   input logic [W_IN-1:0]   a_in;
+   output logic [W_OUT-1:0] S_out;
 
    logic [2:0] state;
    logic shiftout;
@@ -30,11 +33,11 @@ module dct_1d
    logic signed [W_OUT-1:0] f_in;
 
    // Constants (all in two's complement Q1.(CONST_PREC-1) format)
-   localparam int CONST_PREC = 13;
-   localparam signed [CONST_PREC-1:0] m1 = 13'sh05a8;
-   localparam signed [CONST_PREC-1:0] m2 = 13'sh0310;
-   localparam signed [CONST_PREC-1:0] m3 = 13'sh0454;
-   localparam signed [CONST_PREC-1:0] m4 = 13'sh0a74;
+   localparam int CONST_PREC = STAGE == 0 ? 13 : 17;
+   localparam signed [CONST_PREC-1:0] m1 = STAGE == 0 ? 13'sh05a8 : 17'sh05a82;
+   localparam signed [CONST_PREC-1:0] m2 = STAGE == 0 ? 13'sh0310 : 17'sh030fc;
+   localparam signed [CONST_PREC-1:0] m3 = STAGE == 0 ? 13'sh0454 : 17'sh04546;
+   localparam signed [CONST_PREC-1:0] m4 = STAGE == 0 ? 13'sh0a74 : 17'sh0a73d;
 
    // Input coefficient is W_IN+3 wide
    logic signed [W_IN+2+CONST_PREC:0] m_tmp;
@@ -42,7 +45,7 @@ module dct_1d
    logic signed [W_IN+2:0] m_in;
    logic signed [CONST_PREC-1:0] m_const;
    assign m_tmp = m_in * m_const;
-   assign m_out = m_tmp[W_IN+2+CONST_PREC:CONST_PREC-3] + m_tmp[CONST_PREC-4];
+   assign m_out = m_tmp[W_IN+2+CONST_PREC:CONST_PREC-2] + m_tmp[CONST_PREC-3];
 
    // SystemVerilog interprets signed packed arrays as if the entire
    // vector were signed, so we use unpacked arrays instead.
@@ -99,8 +102,8 @@ module dct_1d
         7: d_in = c[6];
       endcase // case (state)
 
-      m_in[0] = 'x;
-      m_in[1] = 'x;
+      m_in = 'x;
+      m_const = 'x;
       case (state)
         0: e_in = d[0];
         1: e_in = d[1];
