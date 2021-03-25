@@ -1,4 +1,4 @@
-module buf_mem
+module transpose_mem
   (input logic clk,
     input logic [11:0] S_in, output logic [11:0] S_out,
     input logic [6:0] raddr, input logic [6:0] waddr, input logic wren);
@@ -27,6 +27,4 @@ module buf_mem
       S_out <= buf2[yr][xr];
   end // always_ff
 
-endmodule // buf_mem
-
-
+endmodule // tranpose_mem

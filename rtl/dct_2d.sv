@@ -14,7 +14,7 @@ module dct_2d(input logic clk, input logic rst,
    localparam [7:0] dct_latency = 8'd48;
    localparam [7:0] trb_latency = 8'd64;
 
-   always @(posedge clk) begin
+   always_ff @(posedge clk) begin
       if (rst) begin
          count1 <= 0;
          count2 <= 0;

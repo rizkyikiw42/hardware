@@ -27,6 +27,7 @@ module tb_dct_2d();
    task dct_test(input int a[8][8]);
       real S0[8][8];
       real S1[8][8];
+      logic signed [14:0] outs[8][8];
       real diff;
 
       for (int i = 0; i < 8; i++)
@@ -56,6 +57,7 @@ module tb_dct_2d();
             #96;#128;#96;#2;
             for (int col = 0; col < 8; col++)
               for (int row = 0; row < 8; row++) begin
+                 outs[row][col] = out;
                  diff = S1[col][row] - out;
                  // 0.0001% tolerance
                  assert (diff <= 10 && diff >= -10)
@@ -66,6 +68,22 @@ module tb_dct_2d();
          end
       join
       ena = 0;
+
+      $display("Behavioural:");            
+      for (int row = 0; row < 8; row++) begin
+         for (int col = 0; col < 8; col++)
+           $write("  %5d", int'(S1[col][row]));
+         $display("");
+      end
+
+      $display("RTL:");
+      for (int row = 0; row < 8; row++) begin
+         for (int col = 0; col < 8; col++)
+           $write("  %5d", outs[row][col]);
+         $display("");
+      end
+
+      $display("%f", dct_approx('{1, 2, 3, 4, 5, 6, 7, 8}));
    endtask // dct_test
 
    initial begin

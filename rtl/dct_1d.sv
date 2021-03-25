@@ -72,7 +72,7 @@ module dct_1d
       case (state)
         0: b_in = a[0] + a[7];
         1: b_in = a[1] + a[6];
-        2: b_in = a[2] - a[4];
+        2: b_in = a[3] - a[4];  // Error in Agostini paper
         3: b_in = a[1] - a[6];
         4: b_in = a[2] + a[5];
         5: b_in = a[3] + a[4];

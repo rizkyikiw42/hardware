@@ -1,0 +1,4 @@
+name = "RefJpeg"
+uuid = "88e4ec4b-ed5e-48cf-82e9-b6f5905b47ab"
+authors = ["Sam Schweigel <s.schweigel@gmail.com>"]
+version = "0.1.0"
