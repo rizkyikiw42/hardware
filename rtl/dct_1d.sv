@@ -2,13 +2,17 @@
 //
 //   Pipelined Fast 2-D DCT Architecture for JPEG Image Compression
 //   (L. Agostini, I. Silva, S. Bampi, 2001)
+//
+// When you get the rdy_out signal and raise ena_in, you must provide
+// all 8 pixels, one after the other.
 module dct_1d
   #(parameter STAGE=0)
-   (clk, rst, ena_in, a_in, S_out);
+   (clk, rst, ena_in, ena_out, rdy_in, rdy_out, a_in, S_out);
    localparam int W_IN = STAGE == 0 ? 8 : 12;
    localparam int W_OUT = STAGE == 0 ? 12 : 15;
 
-   input logic clk, rst, ena_in;
+   input logic clk, rst, ena_in, rdy_in;
+   output logic ena_out, rdy_out;
    input logic [W_IN-1:0]   a_in;
    output logic [W_OUT-1:0] S_out;
 
@@ -46,28 +50,52 @@ module dct_1d
    logic signed [CONST_PREC-1:0] m_const;
    assign m_tmp = m_in * m_const;
    assign m_out = m_tmp[W_IN+2+CONST_PREC:CONST_PREC-2] + m_tmp[CONST_PREC-3];
+   
+   // Does the given stage (a = 5, f = 0) have a valid, complete row?
+   logic [5:0] stage_valid;
+
+   // Is it safe to drive the pipeline forward?  (ie. if there's a row
+   // in f, the next module must be ready).
+   logic safe;
 
    // SystemVerilog interprets signed packed arrays as if the entire
    // vector were signed, so we use unpacked arrays instead.
-   pingpong_buffer #(W_IN)   BUF_A(.in(a_in), .out('{a[7], a[6], a[5], a[4], a[3], a[2], a[1], a[0]}), .*);
-   pingpong_buffer #(W_IN+1) BUF_B(.in(b_in), .out('{b[7], b[6], b[5], b[4], b[3], b[2], b[1], b[0]}), .*);
-   pingpong_buffer #(W_IN+2) BUF_C(.in(c_in), .out('{c[7], c[6], c[5], c[4], c[3], c[2], c[1], c[0]}), .*);
-   pingpong_buffer #(W_IN+3) BUF_D(.in(d_in), .out('{d[7], d[6], d[5], d[4], d[3], d[2], d[1], d[0]}), .*);
-   pingpong_buffer #(W_IN+3) BUF_E(.in(e_in), .out('{e[7], e[6], e[5], e[4], e[3], e[2], e[1], e[0]}), .*);
-   pingpong_buffer #(W_OUT)  BUF_F(.in(f_in), .out('{f[7], f[6], f[5], f[4], f[3], f[2], f[1], f[0]}), .*);
+   pingpong_buffer #(W_IN)   BUF_A(.in(a_in), .ena_in(safe),
+                                   .out('{a[7], a[6], a[5], a[4], a[3], a[2], a[1], a[0]}), .*);
+   pingpong_buffer #(W_IN+1) BUF_B(.in(b_in), .ena_in(safe),
+                                   .out('{b[7], b[6], b[5], b[4], b[3], b[2], b[1], b[0]}), .*);
+   pingpong_buffer #(W_IN+2) BUF_C(.in(c_in), .ena_in(safe),
+                                   .out('{c[7], c[6], c[5], c[4], c[3], c[2], c[1], c[0]}), .*);
+   pingpong_buffer #(W_IN+3) BUF_D(.in(d_in), .ena_in(safe),
+                                   .out('{d[7], d[6], d[5], d[4], d[3], d[2], d[1], d[0]}), .*);
+   pingpong_buffer #(W_IN+3) BUF_E(.in(e_in), .ena_in(safe),
+                                   .out('{e[7], e[6], e[5], e[4], e[3], e[2], e[1], e[0]}), .*);
+   pingpong_buffer #(W_OUT)  BUF_F(.in(f_in), .ena_in(safe),
+                                   .out('{f[7], f[6], f[5], f[4], f[3], f[2], f[1], f[0]}), .*);
 
    always_ff @(posedge clk)
-     if (rst)
-       state <= 0;
-     else begin
-        if (ena_in)
-          state <= state + 1;
+     if (rst) begin
+        state <= 0;
+        stage_valid <= '0;
+     end else begin
+        if (safe) begin
+           state <= state + 1;
+           if (state == 7)
+             stage_valid <= {ena_in, stage_valid[5:1]};
+        end
+        
         if (shiftout) begin
            d_8 <= c[7];
            e_8 <= d_8;
         end
      end
 
+   always_comb begin
+      safe = !stage_valid[0] || rdy_in;
+      ena_out = stage_valid[0] && rdy_in;
+      rdy_out = safe && (state == 0);
+   end
+   
    always_comb begin
       case (state)
         0: b_in = a[0] + a[7];

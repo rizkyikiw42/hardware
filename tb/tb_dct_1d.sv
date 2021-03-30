@@ -1,7 +1,8 @@
 import sim_dct::*;
 
 module tb_dct_1d();
-   logic clk, rst, ena_in;
+   logic clk, rst, ena_in, ena_out;
+   logic rdy_in, rdy_out;
    logic signed [7:0] a_in;
    logic signed [11:0] S_out;
 
@@ -29,33 +30,44 @@ module tb_dct_1d();
       for (int i = 0; i < 8; i++)
         S[i] = dct_approx(a[i]);
 
-      ena_in = 1;
+      rdy_in = 0;
+      ena_in = 0;
+
       fork
          // Process to push things into the pipelinee
          begin
-            for (int row = 0; row < 8; row++)
-              for (int col = 0; col < 8; col++) begin
-                 a_in = a[row][col]; #2;
-              end
+            #10;
+            for (int row = 0; row < 8; row++) begin
+               while (!rdy_out)
+                 @(negedge clk);
+               ena_in = 1;
+               for (int col = 0; col < 8; col++) begin
+                  a_in = a[row][col];
+                  @(posedge clk);
+               end
+               ena_in = 0;
+            end
             a_in = 'x;
          end
 
          // Process checking coefficients that come out
          begin
             // First row of coefficients takes 48 clocks to emerge.
-            #96;
+            #100;
+            rdy_in = 1;
             for (int row = 0; row < 8; row++)
               for (int col = 0; col < 8; col++) begin
+                 while (!ena_out)
+                   @(posedge clk);
                  diff = S[row][col] - S_out;
                  // 1% tolerance
                  assert (diff <= 2 && diff >= -2)
                    else $error("Computed S[%d][%d] = %f, got %d",
                                row, col, S[row][col], S_out);
-                 #2;
+                 @(posedge clk);
               end
          end
       join
-      ena_in = 0;
    endtask // dct_test
 
    initial begin

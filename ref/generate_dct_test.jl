@@ -14,3 +14,4 @@ display(A)
 
 display(Int.(round.(RefJpeg.dct2(A))))
 display(Int.(round.(RefJpeg.dct2_2d_approx_ns(A))))
+display(Int.(round.(mapslices(RefJpeg.dct2_1d_approx, A, dims=2))))
