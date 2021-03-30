@@ -25,6 +25,5 @@ module tb_trb ();
       @(posedge clk) in = i;
     end
 
-
   end
 endmodule // tb_trb

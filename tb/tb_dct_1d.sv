@@ -36,7 +36,7 @@ module tb_dct_1d();
       fork
          // Process to push things into the pipelinee
          begin
-            #10;
+            // #10;
             for (int row = 0; row < 8; row++) begin
                while (!rdy_out)
                  @(negedge clk);
@@ -53,7 +53,7 @@ module tb_dct_1d();
          // Process checking coefficients that come out
          begin
             // First row of coefficients takes 48 clocks to emerge.
-            #100;
+            // #100;
             rdy_in = 1;
             for (int row = 0; row < 8; row++)
               for (int col = 0; col < 8; col++) begin
