@@ -45,7 +45,9 @@ pushd sw
 
 pushd linux-socfpga
 
-make socfpga_defconfig
+cp -f ../kernelconfig .config
+
+# make socfpga_defconfig
 make -j 5 zImage modules
 make modules_install INSTALL_MOD_PATH=modules_install
 rm -rf modules_install/lib/modules/*/build
@@ -65,6 +67,10 @@ cp -f ../hw/quartus/software/spl_bsp/u-boot-socfpga/u-boot-with-spl.sfp .
 cp -f ../hw/quartus/output_files/soc_system.rbf boot
 cp -f ../hw/quartus/soc_system.dtb boot/socfpga_cyclone5_socdk.dtb
 cp -f linux-socfpga/arch/arm/boot/zImage boot
+
+mkdir -p rootfs/lib/modules
+rm -rf rootfs/lib/modules/*
+cp -rfv linux-socfpga/modules_install/lib/modules/* rootfs/lib/modules
 
 python3 make_sdimage_p3.py -f \
   -P u-boot-with-spl.sfp,num=3,format=raw,size=10M,type=A2 \

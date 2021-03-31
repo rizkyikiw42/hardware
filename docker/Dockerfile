@@ -53,5 +53,4 @@ RUN \
 
 RUN \
         update-locale LANG=en_US.UTF-8 && \
-        apt-get -y install diffstat
-
+        apt-get -y install diffstat libncurses5-dev
