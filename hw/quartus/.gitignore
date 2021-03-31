@@ -1,0 +1,15 @@
+.qsys_edit/
+soc_system
+soc_system.sopcinfo
+soc_system.qws
+stamp/
+db/
+incremental_db/
+output_files/
+*.bak
+c5_pin_model_dump.txt
+hps_isw_handoff/
+hps_sdram_p0_summary.csv
+hps_sdram_p0_all_pins.txt
+soc_system.dtb
+soc_system.dts
