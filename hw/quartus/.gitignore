@@ -13,3 +13,4 @@ hps_sdram_p0_summary.csv
 hps_sdram_p0_all_pins.txt
 soc_system.dtb
 soc_system.dts
+software/

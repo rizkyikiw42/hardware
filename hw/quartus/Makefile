@@ -137,7 +137,7 @@ $(DTS) : $(SOPCINFO) $(BOARD_INFO)
 preloader : $(PRELOADER_MKPIMAGE)
 
 $(PRELOADER_MKPIMAGE) : $(PRELOADER_MAKEFILE) $(BSP_SETTINGS)
-	$(MAKE) -C $(BSP_DIR)
+	# $(MAKE) -C $(BSP_DIR)
 
 $(BSP_SETTINGS) $(PRELOADER_MAKEFILE) : $(PRELOADER_SETTINGS_DIR)
 	mkdir -p $(BSP_DIR)
@@ -146,7 +146,7 @@ $(BSP_SETTINGS) $(PRELOADER_MAKEFILE) : $(PRELOADER_SETTINGS_DIR)
 	  --bsp-dir $(BSP_DIR) \
 	  --settings $(BSP_SETTINGS) \
 	  --preloader-settings-dir $(PRELOADER_SETTINGS_DIR) \
-	  --set spl.boot.FAT_SUPPORT 1
+          --preloader-settings-dir "hps_isw_handoff/soc_system_hps_0"
 
 # uboot
 #

@@ -42,8 +42,11 @@ RUN \
         docbook-utils gawk make gcc \
         build-essential g++ chrpath \
         mercurial autoconf automake groff libtool \
-        kmod cpio parted udev dosfstools && \
+        kmod cpio parted udev dosfstools \
+        bison flex && \
         ln -sf bash /bin/sh
 
-COPY entry.sh /
-ENTRYPOINT ["/entry.sh"]
+RUN \
+        dpkg --add-architecture i386 && \
+        apt-get update && \
+        apt-get install -y libc6:i386 libncurses5:i386 libstdc++6:i386 zlib1g:i386 bc
