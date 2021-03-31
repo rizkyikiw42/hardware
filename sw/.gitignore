@@ -1,2 +1,8 @@
 *.scr
 linux-socfpga/
+ubuntu-20.04-minimal-armhf-2020-05-10/
+ubuntu-20.04-minimal-armhf-2020-05-10.tar.xz
+rootfs/
+boot/
+sdcard.img
+u-boot-with-spl.sfp
