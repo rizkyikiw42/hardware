@@ -16,7 +16,7 @@ RUN \
         wget https://download.altera.com/akdlm/software/acdsinst/20.1std.1/720/ib_installers/cyclonev-20.1.1.720.qdz && \
         chmod +x QuartusLiteSetup-20.1.1.720-linux.run && \
         ./QuartusLiteSetup-20.1.1.720-linux.run --mode unattended --installdir /opt/intelFPGA_lite/20.1 --accept_eula 1 && \
-        rm -rf QuartusLiteSetup-20.1.1.720-linux.run cyclonev-20.1.1.720.qdz /opt/intelFPGA_lite/20.1/nios2eds
+        rm -rf QuartusLiteSetup-20.1.1.720-linux.run cyclonev-20.1.1.720.qdz
 
 RUN \
         wget https://download.altera.com/akdlm/software/acdsinst/20.1std/711/ib_installers/SoCEDSSetup-20.1.0.711-linux.run && \

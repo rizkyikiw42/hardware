@@ -5,7 +5,7 @@ export QUARTUS_ROOTDIR=/opt/intelFPGA_lite/20.1/quartus
 . /opt/intelFPGA_lite/20.1/quartus/adm/qenv.sh
 . /opt/intelFPGA/20.1/embedded/env.sh
 export PATH=/opt/intelFPGA/20.1/embedded/host_tools/linaro/gcc/bin:$PATH
-
+export PATH=/opt/intelFPGA_lite/20.1/quartus/sopc_builder/bin:$PATH
 set -e
 
 cd /src/
@@ -16,22 +16,22 @@ export CROSS_COMPILE=arm-eabi-
 pushd hw/quartus
 make rbf
 make dtb
-make preloader
+# make preloader
 
-pushd software/spl_bsp
+# pushd software/spl_bsp
 
-[ ! -d "u-boot-socfpga" ] \
-    && git clone --depth=1 --branch=ACDS20.1STD_REL_GSRD_PR https://github.com/altera-opensource/u-boot-socfpga
+# [ ! -d "u-boot-socfpga" ] \
+#     && git clone --depth=1 --branch=ACDS20.1STD_REL_GSRD_PR https://github.com/altera-opensource/u-boot-socfpga
 
-pushd u-boot-socfpga
+# pushd u-boot-socfpga
 
-./arch/arm/mach-socfpga/qts-filter.sh cyclone5 ../../../ ../ ./board/altera/cyclone5-socdk/qts/
+# ./arch/arm/mach-socfpga/qts-filter.sh cyclone5 ../../../ ../ ./board/altera/cyclone5-socdk/qts/
 
-make socfpga_cyclone5_defconfig
-make -j5
+# make socfpga_cyclone5_defconfig
+# make -j5
 
-popd
-popd
+# popd
+# popd
 popd
 
 pushd sw/boot
@@ -40,15 +40,20 @@ popd
 
 pushd sw
 
-[ ! -d "linux-socfpga" ] \
-    && git clone --depth=1 --branch=ACDS20.1STD_REL_GSRD_PR https://github.com/altera-opensource/linux-socfpga
+if [ ! -d "linux-socfpga" ]
+then
+    git clone --depth=1 --branch=ACDS20.1STD_REL_GSRD_PR https://github.com/altera-opensource/linux-socfpga
+    echo "#include \"soc_system.dtsi\"" >> arch/arm/boot/dts/socfpga_cyclone5_socdk.dts
+fi
 
 pushd linux-socfpga
 
 cp -f ../kernelconfig .config
 
+cp -f ../../hw/quartus/soc_system.dts arch/arm/boot/dts/soc_system.dtsi
+
 # make socfpga_defconfig
-make -j 5 zImage modules
+make -j 5 zImage modules dtbs
 make modules_install INSTALL_MOD_PATH=modules_install
 rm -rf modules_install/lib/modules/*/build
 rm -rf modules_install/lib/modules/*/source
@@ -65,7 +70,7 @@ fi
 
 cp -f ../hw/quartus/software/spl_bsp/u-boot-socfpga/u-boot-with-spl.sfp .
 cp -f ../hw/quartus/output_files/soc_system.rbf boot
-cp -f ../hw/quartus/soc_system.dtb boot/socfpga_cyclone5_socdk.dtb
+cp -f ../hw/quartus/output_files/soc_system.dtb boot/socfpga_cyclone5_socdk.dtb
 cp -f linux-socfpga/arch/arm/boot/zImage boot
 
 mkdir -p rootfs/lib/modules

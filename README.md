@@ -24,7 +24,7 @@ to create the SD card image.
 Run this from the root of the repository:
 
 ```
-docker run -it --privileged -v $PWD:/src -w /src quartus-cyclonev-soceds ./build.sh
+docker run -it --privileged --net=host -v $PWD:/src -w /src quartus-cyclonev-soceds ./build.sh
 ```
 
 The resulting SD card will be in `sw/sdcard.img`.`

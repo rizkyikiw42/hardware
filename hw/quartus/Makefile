@@ -145,8 +145,7 @@ $(BSP_SETTINGS) $(PRELOADER_MAKEFILE) : $(PRELOADER_SETTINGS_DIR)
 	  --type spl \
 	  --bsp-dir $(BSP_DIR) \
 	  --settings $(BSP_SETTINGS) \
-	  --preloader-settings-dir $(PRELOADER_SETTINGS_DIR) \
-          --preloader-settings-dir "hps_isw_handoff/soc_system_hps_0"
+	  --preloader-settings-dir $(PRELOADER_SETTINGS_DIR)
 
 # uboot
 #
