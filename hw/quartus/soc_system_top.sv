@@ -269,7 +269,8 @@ module soc_system_top(
      .hps_hps_io_gpio_inst_GPIO61  ( HPS_GSENSOR_INT ),
 
      .led_pio_export ( LEDR ),
-     .sw_pio_export  ( SW )
+     .sw_pio_export  ( SW ),
+     .key_pio_export ( KEY )
   );
 
 endmodule
