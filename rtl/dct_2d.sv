@@ -1,48 +1,21 @@
+// On one ena_in, the user must provide an entire row of 8 pixels.  On
+// out ena_out, the next module must accept an entire row of 8
+// coefficients.
 module dct_2d(input logic clk, input logic rst,
               input logic [7:0] in, output logic [14:0] out,
-              input ena_in);
-   logic trb_enable, dct_ena1, dct_ena2;
-   logic [11:0] first_out, second_in;
+              input logic ena_in, output logic ena_out,
+              input logic rdy_in, output logic rdy_out);
 
-   dct_1d #(.STAGE(0)) first (clk, rst, dct_ena1, in, first_out);
-   dct_1d #(.STAGE(1)) second (clk, rst, dct_ena2, second_in, out);
-   transpose_buffer trb (clk, rst, trb_enable, first_out, second_in);
-
-   logic [7:0] count1, count2;
-   enum {START, TRB_BEGIN, DCT2_1D_BEGIN} state;
-
-   localparam [7:0] dct_latency = 8'd48;
-   localparam [7:0] trb_latency = 8'd64;
-
-   always_ff @(posedge clk) begin
-      if (rst) begin
-         count1 <= 0;
-         count2 <= 0;
-         trb_enable <= 0;
-         dct_ena1 <= 0;
-         dct_ena2 <= 0;
-         state <= START;
-      end // if (rst)
-
-      else begin
-         if (ena_in) begin
-            case (state)
-              START: begin
-                 dct_ena1 <= 1;
-                 count1 <= count1 + 1;
-                 if (count1 == dct_latency - 2) state <= TRB_BEGIN;
-              end
-              TRB_BEGIN: begin
-                 trb_enable <= 1;
-                 count2 <= count2 + 1;
-                 if (count2 == trb_latency + 1) state <= DCT2_1D_BEGIN;
-              end
-              DCT2_1D_BEGIN: begin
-                 dct_ena2 <= 1;
-              end
-            endcase
-         end // if (ena_in)
-      end // else
-   end // always
+   logic ena_trb;
+   logic rdy_trb;
+   logic ena_s1;
+   logic rdy_s1;
+   
+   logic [11:0] in_trb;
+   logic [11:0] in_s1;
+   
+   dct_1d #(.STAGE(0)) DCT0 (clk, rst, ena_in, ena_trb, rdy_trb, rdy_out, in, in_trb);
+   transpose_buffer TRB (clk, rst, ena_trb, ena_s1, rdy_s1, rdy_trb, in_trb, in_s1);
+   dct_1d #(.STAGE(1)) DCT1 (clk, rst, ena_s1, ena_out, rdy_in, rdy_s1, in_s1, out);
 
 endmodule // dct_2d

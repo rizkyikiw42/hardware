@@ -2,11 +2,13 @@
 
 import sim_dct::*;
 module tb_dct_2d();
-   logic clk, rst, ena;
+   logic clk, rst, ena_in, ena_out;
+   logic rdy_in, rdy_out;
    logic signed [7:0] in;
    logic signed [14:0] out;
 
-   dct_2d DUT(clk, rst, in, out, ena);
+
+   dct_2d DUT(.*);
 
    localparam int testblock[8][8] = '{
      '{65,  84,  88,   74,   71,   84,   91,   86},
@@ -40,50 +42,44 @@ module tb_dct_2d();
          S1[i] = dct_approx(col);
       end
 
-      ena = 1; #2;
+      rdy_in = 0;
+      ena_in = 0;
+
       fork
-         // Process to push things into the pipelinee
+         // Process to push things into the pipeline
          begin
-            for (int row = 0; row < 8; row++)
-              for (int col = 0; col < 8; col++) begin
-                 in = a[row][col]; #2;
-              end
-            in = 'x;
+            for (int row = 0; row < 8; row++) begin
+              while (!rdy_out)
+                @(negedge clk);
+               ena_in = 1;
+               for (int col = 0; col < 8; col++) begin
+                  in = a[row][col];
+                  @(posedge clk);
+               end
+               ena_in = '0;
+               in = 'x;
+            end
          end
 
          // Process checking coefficients that come out
          begin
             // First row of coefficients takes 48+64+48 clocks to emerge.
-            #96;#128;#96;#2;
+            rdy_in = 1;
             for (int col = 0; col < 8; col++)
               for (int row = 0; row < 8; row++) begin
+                 while (!ena_out)
+                   @(posedge clk);
                  outs[row][col] = out;
                  diff = S1[col][row] - out;
                  // 0.0001% tolerance
+                 $display("%d, expected %d", out, outs[row][col]);
                  assert (diff <= 10 && diff >= -10)
                    else $error("Computed S[%d][%d] = %f, got %d",
                                row, col, S1[col][row], out);
-                 #2;
+                 @(posedge clk);
               end
          end
       join
-      ena = 0;
-
-      $display("Behavioural:");            
-      for (int row = 0; row < 8; row++) begin
-         for (int col = 0; col < 8; col++)
-           $write("  %5d", int'(S1[col][row]));
-         $display("");
-      end
-
-      $display("RTL:");
-      for (int row = 0; row < 8; row++) begin
-         for (int col = 0; col < 8; col++)
-           $write("  %5d", outs[row][col]);
-         $display("");
-      end
-
-      $display("%f", dct_approx('{1, 2, 3, 4, 5, 6, 7, 8}));
    endtask // dct_test
 
    initial begin

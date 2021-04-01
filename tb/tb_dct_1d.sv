@@ -34,7 +34,7 @@ module tb_dct_1d();
       ena_in = 0;
 
       fork
-         // Process to push things into the pipelinee
+         // Process to push things into the pipeline
          begin
             // #10;
             for (int row = 0; row < 8; row++) begin
@@ -53,7 +53,6 @@ module tb_dct_1d();
          // Process checking coefficients that come out
          begin
             // First row of coefficients takes 48 clocks to emerge.
-            // #100;
             rdy_in = 1;
             for (int row = 0; row < 8; row++)
               for (int col = 0; col < 8; col++) begin
