@@ -17,12 +17,14 @@ module transpose_buffer
    // High when the input buffer is full.
    logic inbuf_full;
 
-   // High when we've waited for the first read on the read buffer.
-   logic delay;
+   // High when the data on S_out corresponds to the current raddr.
+   logic cur_valid;
    
    assign rbuf = ~wbuf;
-   assign waddr = {wbuf, yw, xw};    // For writing in row-major order
-   assign raddr = {rbuf, xr, yr} + 1;    // For reading in column-major order
+   // For writing in row-major order
+   assign waddr = {wbuf, yw, xw};   
+   // For reading in column-major order
+   assign raddr = ena_out ? {rbuf, xr, yr} + 1 : {rbuf, xr, yr};
 
    transpose_mem BUF(clk, S_in, S_out, raddr, waddr, wren);
 
@@ -30,22 +32,23 @@ module transpose_buffer
      if (rst) begin
         wbuf <= '0;
         {inbuf_full, yw, xw} <= '0;
-        {outbuf_valid, xr, yr} <= 7'b0111111;
-        delay <= '0;
+        {outbuf_valid, xr, yr} <= '0;
+        cur_valid <= '0;
      end else begin
         if (ena_in)
           {inbuf_full, yw, xw} <= {inbuf_full, yw, xw} + 6'b1;
 
         if (ena_out)
-          {outbuf_valid, xr, yr} <= {outbuf_valid, xr, yr} + 6'b1;
+           {outbuf_valid, xr, yr} <= {outbuf_valid, xr, yr} + 6'b1;
 
-        delay <= outbuf_valid;
         
         if (inbuf_full && !outbuf_valid) begin
            outbuf_valid <= '1;
            inbuf_full <= '0;
            wbuf <= ~wbuf;
-        end
+           cur_valid <= '0;
+        end else
+          cur_valid <= '1;
      end
 
    always_comb begin
@@ -54,7 +57,7 @@ module transpose_buffer
       // The DCT's rdy output will go low after the first pixel, but
       // we need to output an entire column so we also output when the
       // row number is not zero.
-      ena_out = outbuf_valid && delay && (rdy_in || yr != '0);
+      ena_out = outbuf_valid && cur_valid && (rdy_in || yr != '0);
       wren = ena_in;
    end
        
