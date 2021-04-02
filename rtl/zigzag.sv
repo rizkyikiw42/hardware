@@ -35,7 +35,9 @@ module zigzag(input logic clk, input logic rst,
    logic [2:0] idx_out_y;
    logic [2:0] idx_out_x_n;
    logic [2:0] idx_out_y_n;
+   logic [5:0] idx_out;
    logic [5:0] idx_out_n;
+   assign idx_out = {idx_out_x, idx_out_y};
    assign idx_out_n = {idx_out_x_n, idx_out_y_n};
 
    enum logic [1:0] { RIGHT, DOWNLEFT, UPRIGHT } dir;
@@ -61,7 +63,7 @@ module zigzag(input logic clk, input logic rst,
            end
         end
 
-        out <= coefs[!active_in][ena_out ? idx_out_n : '0];
+        out <= coefs[!active_in][ena_out ? idx_out_n : idx_out];
         if (ena_out) begin
            idx_out_x <= idx_out_x_n;
            idx_out_y <= idx_out_y_n;

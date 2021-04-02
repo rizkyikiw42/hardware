@@ -9,7 +9,7 @@ function ones_encode_int(val)
     code
 end
 
-# full_img = load(download("https://www.ubc.ca/_assets/img/about-ubc/about_ubc-1200x438.jpg"))
+full_img = load(download("https://www.ubc.ca/_assets/img/about-ubc/about_ubc-1200x438.jpg"))
 x, y = 105, 385
 img = Gray.(full_img[y:y+7, x:x+7])
 

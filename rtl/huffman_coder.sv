@@ -21,7 +21,6 @@ module huffman_coder(input logic clk, input logic rst,
 
    logic shift_ena;
    logic shift_rdy;
-   logic shift_flush;
    logic [15:0] shift_code;
    logic [4:0] shift_size;
    

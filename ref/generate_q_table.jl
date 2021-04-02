@@ -1,6 +1,6 @@
 using RefJpeg
 
-scaled_qtab = Int.(round.(RefJpeg.q_table ./ RefJpeg.scalesm))
+scaled_qtab = Int.(round.(RefJpeg.q_table ./ RefJpeg.scalesm))'
 
 open("q_table.hex", "w") do io
     for row = eachrow(scaled_qtab)

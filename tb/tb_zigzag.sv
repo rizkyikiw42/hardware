@@ -9,8 +9,8 @@ module tb_zigzag();
    logic rdy_in;
    logic rdy_out;
 
-   logic [9:0] in;
-   logic [9:0] out;
+   logic [10:0] in;
+   logic [10:0] out;
    
    zigzag DUT(.*);
 

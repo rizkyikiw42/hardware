@@ -55,10 +55,10 @@ module run_encoder(input logic clk, input logic rst,
       // Enable the output when we receive a nonzero input (or the
       // first input, regardless), or we've just emitted a ZRL, or
       // we've completed the block and want to emit an EOB.
-      ena_out = 
-        ena_in && (in != '0 || dc) 
+      ena_out = rdy_in &&
+        (ena_in && (in != '0 || dc) 
         || zrl 
-        || done && count != '0;
+        || done && count != '0);
       rdy_out = !done && rdy_in && !zrl;
       
       if (zrl)

@@ -14,7 +14,7 @@ module dct_1d
    input logic clk, rst, ena_in, rdy_in;
    output logic ena_out, rdy_out;
    input logic [W_IN-1:0]   a_in;
-   output logic [W_OUT-1:0] S_out;
+   output logic signed [W_OUT-1:0] S_out;
 
    logic [2:0] state;
    logic shiftout;
@@ -38,10 +38,10 @@ module dct_1d
 
    // Constants (all in two's complement Q1.(CONST_PREC-1) format)
    localparam int CONST_PREC = STAGE == 0 ? 13 : 17;
-   localparam signed [CONST_PREC-1:0] m1 = STAGE == 0 ? 13'sh05a8 : 17'sh05a82;
-   localparam signed [CONST_PREC-1:0] m2 = STAGE == 0 ? 13'sh0310 : 17'sh030fc;
-   localparam signed [CONST_PREC-1:0] m3 = STAGE == 0 ? 13'sh0454 : 17'sh04546;
-   localparam signed [CONST_PREC-1:0] m4 = STAGE == 0 ? 13'sh0a74 : 17'sh0a73d;
+   localparam signed [CONST_PREC-1:0] m1 = STAGE == 0 ? 17'sh005a8 : 17'sh05a82;
+   localparam signed [CONST_PREC-1:0] m2 = STAGE == 0 ? 17'sh00310 : 17'sh030fc;
+   localparam signed [CONST_PREC-1:0] m3 = STAGE == 0 ? 17'sh00454 : 17'sh04546;
+   localparam signed [CONST_PREC-1:0] m4 = STAGE == 0 ? 17'sh00a74 : 17'sh0a73d;
 
    // Input coefficient is W_IN+3 wide
    logic signed [W_IN+2+CONST_PREC:0] m_tmp;
