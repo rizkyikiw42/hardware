@@ -36,15 +36,6 @@ module jpeg_pipeline(input logic clk, input logic rst,
       .rdy_in(rdy_zigzag),
       .rdy_out(rdy_quant),
       .*);
-
-   // row_buffer ROWBUF
-   //   (.in(in_rowbuf),
-   //    .out(in_runenc),
-   //    .ena_in(ena_rowbuf),
-   //    .ena_out(ena_runenc),
-   //    .rdy_in(rdy_runenc),
-   //    .rdy_out(rdy_rowbuf),
-   //    .*);
    
    zigzag ZIGZAG
      (.in(in_zigzag),

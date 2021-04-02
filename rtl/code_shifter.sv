@@ -39,7 +39,7 @@ module code_shifter
       maskcode = code & ~('1 << size);
       
       if (flush)
-        out = leftover;
+        out = leftover | ('1 >> fill);
       else begin
          if (fill + size > WIDTH)
            out = leftover | (maskcode >> fill + size - WIDTH);
