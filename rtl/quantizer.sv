@@ -25,7 +25,7 @@ module quantizer(input logic clk, input logic rst,
      end
 
    assign rdy_out = rdy_in;
-   assign ena_out = rdy_in && ena_in;
+   assign ena_out = rdy_in && (ena_in || idx[2:0] != 3'b1);
 
    assign out_full = (in * 2) / q;
    assign out = out_full[11:1] + (!out_full[11] & out_full[0]);

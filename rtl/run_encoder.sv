@@ -69,12 +69,12 @@ module run_encoder(input logic clk, input logic rst,
       out = ones_out;
       size = ones_size;
 
-      if (count >= 6'h10) begin
-         run = 4'hf;
+      if (done && count != '0) begin
+         run = 4'h0;
          out = 'x;
          size = 4'h0;
-      end else if (done && count != '0) begin
-         run = 4'h0;
+      end else if (count >= 6'h10) begin
+         run = 4'hf;
          out = 'x;
          size = 4'h0;
       end else

@@ -42,45 +42,55 @@ module tb_zigzag();
    };
 
    initial begin
-      rdy_in = '0;
       rst = '1;
       #2 rst = '0;
 
-      in = '0;
-      ena_in = '1;
-      while (in < 10'd64)
-        #2 in++;
-      ena_in = '0;
+      assign ena_in = rdy_out;
+      for (int i = 0; i < 64; i++) begin
+         while (!rdy_out)
+           @(negedge clk);
+         in = 100 + i;
+         @(posedge clk);
+         in = 'x;
+         @(negedge clk);
+      end
 
-      #10 rdy_in = '1;
+      for (int i = 0; i < 64; i++) begin
+         while (!rdy_out)
+           @(negedge clk);
+         in = 200 + i;
+         @(posedge clk);
+         in = 'x;
+         @(negedge clk);
+      end
 
-      fork
-         begin
-            @(posedge ena_out);
-            for (int i = 0; i < 64; i++)
-              @(posedge clk)
-                assert (out === expected[i])
-                  else $error("Wrong output (0).  Expected %d, got %d",
-                              expected[i], out);            
-         end
-
-         begin
-            #10 ena_in = '1;
-            in = 10'd100;
-            while (in < 10'd164)
-              #2 in++;
-            ena_in = '0;
-
-            ena_out = '1;
-            for (int i = 0; i < 64; i++)
-              @(posedge clk)
-                assert (out === expected[i] + 100)
-                  else $error("Wrong output (1).  Expected %d, got %d",
-                              expected[i], out);
-         end
-      join
-
-      $stop;
+      assign ena_in = '0;
    end
 
+   initial begin
+      #2;
+      rdy_in = '1;
+      for (int i = 0; i < 64; i++) begin
+         while (!ena_out)
+           @(posedge clk);
+         assert (out === expected[i] + 100)
+           else $error("got wrong output %d, expected %d", 
+                       out, expected[i] + 100);
+         @(posedge clk);
+      end
+
+      for (int i = 0; i < 64; i++) begin
+         while (!ena_out)
+           @(posedge clk);
+         assert (out === expected[i] + 200)
+           else $error("got wrong output %d, expected %d", 
+                       out, expected[i] + 200);
+         @(posedge clk);
+      end
+
+      rdy_in = '0;
+      
+      $stop;
+   end
+   
 endmodule // tb_zigzag

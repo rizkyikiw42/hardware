@@ -6,6 +6,8 @@ module huffman_coder(input logic clk, input logic rst,
                      input logic [3:0] run, size,
                      input logic dc,
                      input logic flush,
+                     // input logic in_done,
+                     // output logic out_done,
                      output logic [15:0] out);
 
    typedef struct packed {
@@ -57,7 +59,7 @@ module huffman_coder(input logic clk, input logic rst,
         code_written <= '0;
      end else begin
         busy <= ena_in || (busy && !code_written);
-
+        
         if (ena_in) begin
            if (dc) begin
               code <= dc_codes[dc_size];

@@ -93,7 +93,8 @@ module dct_1d
    always_comb begin
       safe = !stage_valid[0] || rdy_in;
       ena_out = stage_valid[0] && rdy_in;
-      rdy_out = safe && (state == 0);
+      rdy_out = safe && (state == 0) && !stage_valid[5];
+      // rdy_out = safe && (state == 0);
    end
    
    always_comb begin

@@ -1,10 +1,18 @@
 // The core JPEG pipeline.  Another module, containing this one, will
 // fetch the pixels and store the outputs.
-module jpeg_pipeline(input logic clk, input logic rst,
+module jpeg_pipeline(input logic clk, input logic rst_ext,
                      input logic [7:0] in_pixel, output logic [15:0] out_bits,
+                     output logic [1:0] out_valid,
+                     input logic done_image,
+                     output logic done_block,
+                     output logic done_flush,
                      input logic ena_in, output logic ena_out,
                      input logic rdy_in, output logic rdy_out);
 
+   logic rst;
+   logic rst_pipeline;
+   assign rst = rst_ext || rst_pipeline;
+   
    logic ena_quant, ena_zigzag, ena_runenc, ena_huff, ena_stuff;
    logic rdy_quant, rdy_zigzag, rdy_runenc, rdy_huff, rdy_stuff;
 
@@ -18,6 +26,54 @@ module jpeg_pipeline(input logic clk, input logic rst,
    logic [3:0] run_huff;
    logic [3:0] size_huff;
    logic dc_huff;
+   
+   enum logic [1:0] { BUSY, DONE, FLUSH_HUFF, FLUSH_STUFF } state;
+
+   logic [3:0] waitcycles;
+   
+   assign rst_pipeline = state == FLUSH_STUFF && waitcycles == 4'd3;
+
+   always_ff @(posedge clk)
+     if (rst_ext) begin
+        done_flush <= '0;
+        state <= BUSY;
+        waitcycles <= '0;
+     end else begin
+        case (state)
+          BUSY: begin
+             if (done_image)
+               state <= DONE;
+             done_flush <= '0;
+          end
+
+          DONE:
+            if (waitcycles == 4'd3) begin
+               state <= FLUSH_HUFF;
+               waitcycles <= '0;
+            end else begin
+               waitcycles <= waitcycles + 4'd1;
+            end
+
+          FLUSH_HUFF:
+            if (waitcycles == 4'd3) begin
+               state <= FLUSH_STUFF;
+               waitcycles <= '0;
+            end else begin
+               waitcycles <= waitcycles + 4'd1;
+            end
+
+          FLUSH_STUFF:
+            if (waitcycles == 4'd3) begin
+               state <= BUSY;
+               waitcycles <= '0;
+               done_flush <= '1;
+            end else begin
+               waitcycles <= waitcycles + 4'd1;
+            end
+
+          default:;
+        endcase // case (done_image)
+     end
    
    dct_2d DCT
      (.in(in_pixel),
@@ -57,7 +113,7 @@ module jpeg_pipeline(input logic clk, input logic rst,
       .run(run_huff),
       .size(size_huff),
       .dc(dc_huff),
-      .done(),
+      .done(done_block),
       .*);
 
    huffman_coder HUFF
@@ -71,7 +127,7 @@ module jpeg_pipeline(input logic clk, input logic rst,
       .run(run_huff),
       .size(size_huff),
       .dc(dc_huff),
-      .flush('0),
+      .flush(state == FLUSH_HUFF && waitcycles == 4'd0),
       .*);
 
    byte_stuffer STUFF
@@ -81,8 +137,9 @@ module jpeg_pipeline(input logic clk, input logic rst,
       .ena_out(ena_out),
       .rdy_in(rdy_in),
       .rdy_out(rdy_stuff),
-      .flush('0),
+      .flush(state == FLUSH_STUFF && waitcycles == 4'd0),
       .done(),
+      .out_valid(out_valid),
       .*);
      
 endmodule // jpeg_pipeline

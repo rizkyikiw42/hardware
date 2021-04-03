@@ -2,7 +2,8 @@ module byte_stuffer(input logic clk, input logic rst,
                     input logic ena_in, output logic ena_out,
                     input logic rdy_in, output logic rdy_out,
                     input logic flush, output logic done,
-                    input logic [15:0] in, output logic [15:0] out);
+                    input logic [15:0] in, output logic [15:0] out,
+                    output logic [1:0] out_valid);
 
    logic [15:0] leftover;
    logic [1:0] leftover_valid;
@@ -76,13 +77,17 @@ module byte_stuffer(input logic clk, input logic rst,
       // We will never have leftover 0xFF, since we'll put 0xFF 00
       // instead.  However, 0x12 FF may happen.
       if (flush) begin
-         if (leftover_valid[0])
-           out = leftover;
-         else
-           out = {leftover[15:8], 8'b0};
+         if (leftover_valid[0]) begin
+            out = leftover;
+            out_valid = 2'b11;
+         end else begin
+            out = {leftover[15:8], 8'b0};
+            out_valid = 2'b10;
+         end
       end else begin 
+         out_valid = 2'b11;
          casez (leftover_valid)
-           2'b00: 
+           2'b00:
              if (in[15:8] == '1)
                out = {in[15:8], 8'b0};
              else
