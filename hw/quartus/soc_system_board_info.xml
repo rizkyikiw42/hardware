@@ -232,4 +232,12 @@ of the Linux kernel.  One typically executes sopc2dts as follows:
 <Chosen>
         <Bootargs val="console=ttyS0,115200"></Bootargs>
 </Chosen>
+
+<!-- CPEN391 additions (PLL) -->
+<DTAppend name="pll_0" type="node" parentpath="/clocks" newlabel="pll_0"/>
+<DTAppend name="compatible" parentlabel="pll_0" type="string" val="fixed-clock"/>
+<DTAppend name="#clock-cells" parentlabel="pll_0" type="number" val="0"/>
+<DTAppend name="clock-frequency" parentlabel="pll_0" type="number" val="25000000"/>
+<DTAppend name="clock-output-names" parentlabel="pll_0" type="string" val="pll_0-outclk0"/>
+
 </BoardInfo>

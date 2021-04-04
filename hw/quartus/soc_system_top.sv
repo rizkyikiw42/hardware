@@ -270,7 +270,11 @@ module soc_system_top(
 
      .led_pio_export ( LEDR ),
      .sw_pio_export  ( SW ),
-     .key_pio_export ( KEY )
+     .key_pio_export ( KEY ),
+
+     .rfs_pio_export ( GPIO_0[8] ),
+     .rfs_bt_uart_rxd ( GPIO_0[18] ),
+     .rfs_bt_uart_txd ( GPIO_0[19] )
   );
 
 endmodule
