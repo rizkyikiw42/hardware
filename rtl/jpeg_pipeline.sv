@@ -13,9 +13,10 @@ module jpeg_pipeline(input logic clk, input logic rst_ext,
    logic rst_pipeline;
    assign rst = rst_ext || rst_pipeline;
    
-   logic ena_quant, ena_zigzag, ena_runenc, ena_huff, ena_stuff;
-   logic rdy_quant, rdy_zigzag, rdy_runenc, rdy_huff, rdy_stuff;
+   logic ena_dct, ena_quant, ena_zigzag, ena_runenc, ena_huff, ena_stuff;
+   logic rdy_dct, rdy_quant, rdy_zigzag, rdy_runenc, rdy_huff, rdy_stuff;
 
+   logic [7:0] in_dct;
    logic [14:0] in_quant;
    logic [10:0] in_zigzag;
    logic [10:0] in_runenc;
@@ -74,14 +75,23 @@ module jpeg_pipeline(input logic clk, input logic rst_ext,
           default:;
         endcase // case (done_image)
      end
+
+   row_buffer ROWBUF
+     (.in(in_pixel),
+      .out(in_dct),
+      .ena_in(ena_in),
+      .ena_out(ena_dct),
+      .rdy_in(rdy_dct),
+      .rdy_out(rdy_out),
+      .*);
    
    dct_2d DCT
-     (.in(in_pixel),
+     (.in(in_dct),
       .out(in_quant),
-      .ena_in(ena_in),
+      .ena_in(ena_dct),
       .ena_out(ena_quant),
       .rdy_in(rdy_quant),
-      .rdy_out(rdy_out),
+      .rdy_out(rdy_dct),
       .*);
 
    quantizer QUANT

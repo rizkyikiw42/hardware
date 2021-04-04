@@ -36,7 +36,7 @@ module run_encoder(input logic clk, input logic rst,
         end
 
         if (ena_out) begin
-           if (count < 6'hf) begin
+           if (count < 6'h10) begin
               count <= '0;
               zrl <= '0;
            end else begin

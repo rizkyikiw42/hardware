@@ -79,15 +79,16 @@ module tb_jpeg_pipeline();
       
       for (int block = 0; block < 4; block++) begin
          for (int row = 0; row < 8; row++) begin
-            while (!rdy_out)
-              @(negedge clk);
-            ena_in = 1;
             for (int col = 0; col < 8; col++) begin
+               @(negedge clk);
+               while (!rdy_out)
+                 @(negedge clk);
+               ena_in = 1;
                in_pixel = inblock[block][row * 8 + col];
                @(posedge clk);
+               ena_in = '0;
+               in_pixel = 'x;
             end
-            ena_in = '0;
-            in_pixel = 'x;
          end // for (int row = 0; row < 8; row++)
       end // for (int block = 0; block < 4; block++)
    end

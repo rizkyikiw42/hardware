@@ -57,7 +57,7 @@ module jpeg(input logic clk, input logic rst,
 
    logic out_locked;
    logic [15:0] out_bits_locked;
-   logic [15:0] out_valid_locked;
+   logic [1:0] out_valid_locked;
    logic out_locked_done_flush;
 
    logic in_locked;
@@ -96,8 +96,8 @@ module jpeg(input logic clk, input logic rst,
      end else begin
         if (s_write)
           case (s_address)
-            3'd0: control_width <= {s_writedata[7:0], s_writedata[15:8]};
-            3'd1: control_height <= {s_writedata[7:0], s_writedata[15:8]};
+            3'd0: control_width <= {s_writedata[23:16], s_writedata[31:24]};
+            3'd1: control_height <= {s_writedata[23:16], s_writedata[31:24]};
             3'd2: control_src <= {s_writedata[7:0], s_writedata[15:8], s_writedata[23:16], s_writedata[31:24]};
             3'd3: control_dst <= {s_writedata[7:0], s_writedata[15:8], s_writedata[23:16], s_writedata[31:24]};
             3'd5: busy <= '1;
@@ -139,7 +139,8 @@ module jpeg(input logic clk, input logic rst,
         if (m_read) begin
            if (!m_waitrequest) begin
               in_locked <= '1;
-              in_bits_locked <= m_readdata;
+              // We only care about the higher byte (chrominance).
+              in_bits_locked <= m_readdata[15:8];
 
               // If we're at the edge (width) of this block, we go to
               // the next row of the same block.  If we're at the last
@@ -210,7 +211,7 @@ module jpeg(input logic clk, input logic rst,
          m_byteenable = out_valid_locked;
          m_writedata = out_bits_locked;
          m_write = 1'b1;
-      end else if (!in_bits_locked && busy && !all_pushed) begin
+      end else if (!in_locked && busy && !all_pushed) begin
          // We skip every second (chrominance) byte.
          m_address = control_src[31:1] + cur_x + (cur_y * control_width);
          m_byteenable = 2'b10;
