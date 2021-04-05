@@ -123,6 +123,14 @@
          type = "int";
       }
    }
+   element soc_system
+   {
+      datum _originalDeviceFamily
+      {
+         value = "Cyclone V";
+         type = "String";
+      }
+   }
    element uart_0
    {
       datum _sortIndex
@@ -1079,6 +1087,15 @@
   <parameter name="baseAddress" value="0x00100200" />
   <parameter name="defaultConnection" value="false" />
  </connection>
+ <connection
+   kind="avalon"
+   version="20.1"
+   start="jpeg_0.master"
+   end="hps_0.f2h_axi_slave">
+  <parameter name="arbitrationPriority" value="1" />
+  <parameter name="baseAddress" value="0x0000" />
+  <parameter name="defaultConnection" value="false" />
+ </connection>
  <connection kind="clock" version="20.1" start="clk_0.clk" end="pio_0.clk" />
  <connection kind="clock" version="20.1" start="clk_0.clk" end="pio_1.clk" />
  <connection kind="clock" version="20.1" start="clk_0.clk" end="pio_2.clk" />
@@ -1105,6 +1122,13 @@
    version="20.1"
    start="pll_0.outclk0"
    end="jpeg_0.clock_1" />
+ <connection
+   kind="interrupt"
+   version="20.1"
+   start="hps_0.f2h_irq0"
+   end="jpeg_0.interrupt_sender">
+  <parameter name="irqNumber" value="2" />
+ </connection>
  <connection
    kind="interrupt"
    version="20.1"
