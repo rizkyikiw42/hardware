@@ -1,0 +1,35 @@
+syntax = "proto3";
+
+option go_package = "github.com/CPEN391-Team-4/backend";
+
+package route;
+
+message User {
+  string name = 1;
+  bool restricted = 2;
+  Photo Photo = 3;
+}
+message Photo {
+  bytes image = 1;
+  string fileExtension = 2;
+}
+message UserNames{
+  repeated string usernames = 1;
+}
+message Empty {}
+message FaceVerificationReq {
+  Photo Photo = 1;
+}
+message FaceVerificationResp {
+  string user = 1;
+  float confidence = 2;
+}
+
+service Route {
+  rpc AddTrustedUser(stream User) returns (Empty) {}
+  rpc UpdateTrustedUser(stream User) returns (Empty) {}
+  rpc VerifyUserFace(stream FaceVerificationReq) returns (FaceVerificationResp) {}
+  rpc RemoveTrustedUser(User) returns (Empty) {}
+  rpc GetUserPhoto(User) returns(stream Photo) {}
+  rpc GetAllUserNames(Empty) returns (UserNames) {}
+}
