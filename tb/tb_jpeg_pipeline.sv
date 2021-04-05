@@ -118,7 +118,6 @@ module tb_jpeg_pipeline();
    //   if (DUT.HUFF.ena_out)
    //     $display("huff  out: %x", DUT.HUFF.out);
 
-
    // always @(posedge clk)
    //   if (DUT.RUNENC.ena_out) begin
    //      if (DUT.RUNENC.dc)

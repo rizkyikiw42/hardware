@@ -58,9 +58,8 @@ module huffman_coder(input logic clk, input logic rst,
         busy <= '0;
         code_written <= '0;
      end else begin
-        busy <= ena_in || (busy && !code_written);
-        
         if (ena_in) begin
+           busy <= '1;
            if (dc) begin
               code <= dc_codes[dc_size];
               val <= '{{1'b0, dc_size}, dc_val};
@@ -81,8 +80,15 @@ module huffman_coder(input logic clk, input logic rst,
            end // else: !if(dc)
         end // if (ena_in)
 
-        if (shift_ena)
-          code_written <= !code_written;
+        if (shift_ena) begin
+           if (!code_written)
+             code_written <= '1;
+           else begin
+              code_written <= '0;
+              busy <= '0;
+           end
+
+        end
      end // else: !if(rst)
    
    always_comb begin

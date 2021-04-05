@@ -56,20 +56,13 @@ module jpeg_pipeline(input logic clk, input logic rst_ext,
             end
 
           FLUSH_HUFF:
-            if (waitcycles == 4'd3) begin
-               state <= FLUSH_STUFF;
-               waitcycles <= '0;
-            end else begin
-               waitcycles <= waitcycles + 4'd1;
-            end
+            if (rdy_stuff)
+              state <= FLUSH_STUFF;
 
           FLUSH_STUFF:
-            if (waitcycles == 4'd3) begin
+            if (rdy_in) begin
                state <= BUSY;
-               waitcycles <= '0;
                done_flush <= '1;
-            end else begin
-               waitcycles <= waitcycles + 4'd1;
             end
 
           default:;
@@ -137,7 +130,7 @@ module jpeg_pipeline(input logic clk, input logic rst_ext,
       .run(run_huff),
       .size(size_huff),
       .dc(dc_huff),
-      .flush(state == FLUSH_HUFF && waitcycles == 4'd0),
+      .flush(state == FLUSH_HUFF),
       .*);
 
    byte_stuffer STUFF
@@ -147,7 +140,7 @@ module jpeg_pipeline(input logic clk, input logic rst_ext,
       .ena_out(ena_out),
       .rdy_in(rdy_in),
       .rdy_out(rdy_stuff),
-      .flush(state == FLUSH_STUFF && waitcycles == 4'd0),
+      .flush(state == FLUSH_STUFF),
       .done(),
       .out_valid(out_valid),
       .*);

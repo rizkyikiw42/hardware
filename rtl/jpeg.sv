@@ -58,7 +58,6 @@ module jpeg(input logic clk, input logic rst,
    logic out_locked;
    logic [15:0] out_bits_locked;
    logic [1:0] out_valid_locked;
-   logic out_locked_done_flush;
 
    logic in_locked;
    logic [7:0] in_bits_locked;
@@ -76,6 +75,14 @@ module jpeg(input logic clk, input logic rst,
    // total number, we flush the pipeline and finally give the
    // interrupt.
    logic [15:0] processed_blocks;
+
+   // If this is asserted, then we have a pending read (prevents a
+   // write from barging in).
+   logic busy_reading;
+   // Similar
+   logic busy_writing;
+
+   logic done_flush_locked;
    
    always_ff @(posedge clk)
      if (rst) begin
@@ -93,6 +100,9 @@ module jpeg(input logic clk, input logic rst,
         processed_blocks <= '0;
         out_locked <= '0;
         in_locked <= '0;
+        busy_reading <= '0;
+        busy_writing <= '0;
+        done_flush_locked <= '0;
      end else begin
         if (s_write)
           case (s_address)
@@ -108,37 +118,41 @@ module jpeg(input logic clk, input logic rst,
            out_locked <= '1;
            out_bits_locked <= out_bits;
            out_valid_locked <= out_valid;
-           out_locked_done_flush <= done_flush;
         end
 
-        if (out_locked) begin
+        // Image all done.
+        if (done_flush)
+          done_flush_locked <= '1;
+        
+        // Image all done and written.
+        if (done_flush_locked && !out_locked) begin
+           busy <= '0;
+           control_size <= {cur_out_off, 1'b0};
+           irq <= '1;
+           cur_x <= '0;
+           cur_y <= '0;
+           cur_out_off <= '0;
+           done_flush_locked <= '0;
+        end else
+          irq <= '0;
+
+        if (out_locked && !busy_reading) begin
            // We hold the write command until the HPS deasserts
            // waitrequest, and then we remove our command.
            if (!m_waitrequest) begin
               out_locked <= '0;
               cur_out_off <= cur_out_off + 31'b1;
-              
-              // Image all done and written.
-              if (out_locked_done_flush) begin
-                 busy <= '0;
-                 control_size <= {cur_out_off, 1'b0};
-                 irq <= '1;
-                 cur_x <= '0;
-                 cur_y <= '0;
-                 cur_out_off <= '0;
-              end else
-                irq <= '0;
-           end else // if (!m_waitrequest)
-             irq <= '0;
-        end else // if (out_locked)
-          irq <= '0;
-        
+              busy_writing <= '0;
+           end
+        end
+
         if (ena_in)
           in_locked <= '0;
 
         if (m_read) begin
            if (!m_waitrequest) begin
               in_locked <= '1;
+              busy_reading <= '0;
               // We only care about the higher byte (chrominance).
               in_bits_locked <= m_readdata[15:8];
 
@@ -149,7 +163,7 @@ module jpeg(input logic clk, input logic rst,
                  // At the last row of this block.
                  if (cur_y[2:0] == '1) begin
                     // Go to next block.
-                    if (cur_x == control_width) begin
+                    if (cur_x + 16'b1 == control_width) begin
                        // Next block starts on the next row, all the
                        // way on the left.
                        cur_x <= '0;
@@ -172,10 +186,16 @@ module jpeg(input logic clk, input logic rst,
 
         if (done_block) begin
            processed_blocks <= processed_blocks + 15'b1;
-           done_image <= processed_blocks == control_width[15:3] * control_height[15:3];
+           done_image <= processed_blocks + 15'b1 == control_width[15:3] * control_height[15:3];
         end else begin
            done_image <= '0;
         end
+
+        if (!out_locked && !in_locked && busy && !all_pushed && !busy_writing && !busy_reading)
+          busy_reading <= '1;
+
+        if (out_locked && !busy_reading && !busy_writing)
+          busy_writing <= '1;
      end
 
    always_comb begin
@@ -198,7 +218,7 @@ module jpeg(input logic clk, input logic rst,
       
       all_pushed = cur_y == control_height;
 
-      ena_in = in_locked;
+      ena_in = in_locked && rdy_out;
       rdy_in = !out_locked;
 
       m_writedata = 'x;
@@ -206,12 +226,12 @@ module jpeg(input logic clk, input logic rst,
       m_byteenable = '0;
       
       // Words
-      if (out_locked) begin
+      if (out_locked && !busy_reading) begin
          m_address = control_dst[31:1] + cur_out_off;
          m_byteenable = out_valid_locked;
          m_writedata = out_bits_locked;
          m_write = 1'b1;
-      end else if (!in_locked && busy && !all_pushed) begin
+      end else if (!in_locked && busy && !all_pushed && !busy_writing) begin
          // We skip every second (chrominance) byte.
          m_address = control_src[31:1] + cur_x + (cur_y * control_width);
          m_byteenable = 2'b10;
