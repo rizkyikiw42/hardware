@@ -407,5 +407,5 @@ var Route_ServiceDesc = grpc.ServiceDesc{
 			ServerStreams: true,
 		},
 	},
-	Metadata: "de1_client.proto",
+	Metadata: "route.proto",
 }

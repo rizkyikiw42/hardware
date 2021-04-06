@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+option go_package = "github.com/CPEN391-Team-4/backend";
+
+package video;
+
+message Video {
+  string name = 1;
+  string encoding = 2;
+  Frame frame = 3;
+}
+message Frame {
+  int32 number = 1;
+  bool lastChunk = 2;
+  bytes chunk = 3;
+}
+
+message EmptyVideoResponse {}
+message PullVideoStreamReq {
+  string id = 1;
+}
+
+message PullVideoStreamResp {
+  Video video = 1;
+  bool closed = 2;
+}
+
+service VideoRoute {
+  rpc StreamVideo(stream Video) returns (EmptyVideoResponse) {}
+  rpc PullVideoStream(PullVideoStreamReq) returns (stream PullVideoStreamResp) {}
+}

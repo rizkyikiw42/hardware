@@ -1,21 +1,18 @@
 package main
 
 import (
-	"bufio"
 	"context"
 	"fmt"
-	"io"
 	"log"
-	"os"
 
 	//"environment"
-
+	pb "github.com/CPEN391-Team-4/backend/pb/proto" // Ask John how to add this to project
 	"google.golang.org/grpc"
 )
 
 const READ_BUF_SIZE = 16
 
-func verifyFace(client pb.RouteClient, ctx context.Context, buf []byte) bool, error {
+func verifyFace(client pb.RouteClient, ctx context.Context, buf []byte) (bool, error) {
 
 	var photo pb.Photo
 	stream, err := client.VerifyUserFace(ctx)
@@ -25,7 +22,7 @@ func verifyFace(client pb.RouteClient, ctx context.Context, buf []byte) bool, er
 
 	lastByteRead := -1
 	len := len(buf)
-	buf_end, verified := false
+	buf_end, verified := false, false
 
 	for {
 
@@ -71,9 +68,6 @@ func main() {
 	defer conn.Close()
 	c := pb.NewRouteClient(conn)
 	fmt.Println(conn)
-	// fmt.Println(os.Args[1])
-
-	// verifyFaceCmd := flag.NewFlagSet("verifyface", flag.ExitOnError)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -91,7 +85,7 @@ func main() {
 		Call verifyFace
 		*/
 		
-		frame = make([]byte, READ_BUF_SIZE)		// Replace so that frame is the buffer that contains the raw image
+		frame := make([]byte, READ_BUF_SIZE)		// Replace so that frame is the buffer that contains the raw image
 		unlock, err := verifyFace(c, ctx, frame)
 
 		if err != nil {
@@ -104,25 +98,4 @@ func main() {
 
 	}
 
-	// if len(os.Args) < 2 {
-	// 	fmt.Println("expected subcommand 'verifyface'")
-	// 	os.Exit(1)
-	// }
-
-	// switch os.Args[1] {
-	// case "verifyface":
-	// 	verifyFaceCmd.Parse(os.Args[2:])
-	// 	fmt.Println("subcommand 'verifyface'")
-	// 	fmt.Println("  tail:", verifyFaceCmd.Args())
-	// 	if len(verifyFaceCmd.Args()) < 1 {
-	// 		fmt.Println("expected subcommand 'verifyface' FILE argument")
-	// 		os.Exit(1)
-	// 	}
-	// 	_ = verifyFace(c, ctx, verifyFaceCmd.Args()[0])
-	// default:
-	// 	fmt.Println("expected 'verifyface' subcommand")
-	// 	os.Exit(1)
-	// }
-
-	log.Println(c, ctx)
 }
