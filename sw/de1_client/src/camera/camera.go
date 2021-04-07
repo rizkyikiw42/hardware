@@ -18,6 +18,8 @@ const CAMERA_WIDTH = 640
 const CAMERA_HEIGHT = 480
 const CAMERA_FPS = 10
 
+const JPEG_DEV_PATH = "/dev/team4ⱼpeg"
+
 // We use a global here, because we have a fixed hardware setup.
 var camera *v4l.Device
 var jpegCompressor *os.File
@@ -51,7 +53,7 @@ func Open() {
 	}
 
 	if JPEG_ACCEL_ENABLED {
-		jpegCompressor, err = os.Open(CAMERA_DEV_PATH)
+		jpegCompressor, err = os.Open(JPEG_DEV_PATH)
 		if err != nil {
 			panic(err)
 		}
