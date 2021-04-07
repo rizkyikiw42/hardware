@@ -22,44 +22,82 @@ struct team4_jpeg_dev {
 	/* JPEG compressed image goes here. */
 	void *destbuf;
 	int irq;
+
+	int width;
+	int height;
+
+	/*
+	 * If the accelerator has indicated that our image has
+	 * finished compressing, we will wake this waitqueue and set
+	 * the variable.
+	 */
+	wait_queue_head_t donequeue;
+	int done;
 } dev;
 
+/*
+ * The interface: write two bytes (little-endian) for the width, two
+ * bytes for the height, and then the YUYV 4:2:2 image data.
+ */
 static ssize_t team4_jpeg_write(struct file *f, const char __user *user_buf,
 				size_t size, loff_t *offset)
 {
-	u16 width, height;
+	u16 width = 0, height = 0;
 	if (size > JPEG_MAX_IMAGE_SIZE * 2 + 4 || size < 4)
+		return -EINVAL;
+
+	if (size != width * height * 2 + 4)
 		return -EINVAL;
 
 	if (copy_from_user(&width, user_buf + 0, 2))
 		return -EFAULT;
 	if (copy_from_user(&height, user_buf + 2, 2))
 		return -EFAULT;
-	
+
+	dev.width = width;
+	dev.height = height;
+
+	/* Write the width and height into the control registers. */
 	iowrite16(width, dev.virtbase);
 	iowrite16(height, dev.virtbase + 2);
 
-	pr_info("wrote\n");
+	/*
+	 * Write the source/dest buf physical addresses into the control
+	 * registers.
+	 */
+	iowrite32(__virt_to_bus((u32)dev.sourcebuf), dev.virtbase + 4);
+	iowrite32(__virt_to_bus((u32)dev.destbuf), dev.virtbase + 6);
 
-	u16 out;
-	out = ioread16(dev.virtbase);
+	/*
+	 * Put the user image into the physically contiguous buffer
+	 * that the accelerator will actually read from.
+	 */
+	if (copy_from_user(dev.sourcebuf, user_buf + 4, width * height * 2))
+		return -EFAULT;
 
-	pr_info("read: %d\n", out);
-	
+	/* Start the accelerator. */
+	iowrite8(1, dev.virtbase + 10);
+	pr_info("jpeg started (%dx%d)\n", width, height);
+
 	return size;
 }
 
 static int team4_jpeg_read(struct file *f, char __user *user_buf,
 			   size_t size, loff_t *offset)
 {
-	u32 r;
-	if (size != 4)
+	int ret;
+	if (size != dev.width * dev.height * 2)
 		return -EINVAL;
 
-	r = ioread32(dev.virtbase + 1);
-	pr_info("read: %u\n", r);
+	ret = wait_event_interruptible(dev.donequeue, dev.done);
+	if (ret) {
+		return ret;
+	}
 
-	if (copy_to_user(user_buf, &r, size))
+	/* The accelerator is done. */
+	pr_info("jpeg read\n");	
+
+	if (copy_to_user(user_buf, dev.destbuf, size))
 		return -EFAULT;
 
 	return size;
@@ -67,7 +105,9 @@ static int team4_jpeg_read(struct file *f, char __user *user_buf,
 
 irqreturn_t team4_jpeg_interrupt_handler(int irq, void *dev_id)
 {
-	pr_info("irq handler\n");
+	pr_info("jpeg done\n");
+	dev.done = 1;
+	wake_up(&dev.donequeue);
 	return IRQ_HANDLED;
 }
 
@@ -91,6 +131,8 @@ static int platform_probe(struct platform_device *pdev)
 	if (ret) {
 		return ret;
 	}
+
+	init_waitqueue_head(&dev.donequeue);
 
 	dev.irq = platform_get_irq(pdev, 0);
 	pr_info("irq: %d\n", dev.irq);

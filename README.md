@@ -28,3 +28,12 @@ docker run -it --privileged --net=host -v $PWD:/src -w /src quartus-cyclonev-soc
 ```
 
 The resulting SD card will be in `sw/sdcard.img`.`
+
+# References
+
+- Terasic,for the GHRD template (`soc_system_top.sv`).
+- Columbia University's CSEE 4840 website for information on how to
+  incorporate linux and our hardware.
+- "Pipelined fast 2D DCT architecture for JPEG image compression" by
+  Agostini et. al for details on implementing the DCT step of our JPEG
+  encoder.
