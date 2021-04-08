@@ -13,20 +13,27 @@ import (
 
 const IMG_HEIGHT_COMP = 480
 const IMG_WIDTH_COMP = 640
-const READ_BUF_SIZE = 16
 const CHUNKS_PER_FRAME = IMG_HEIGHT_COMP * IMG_WIDTH_COMP / READ_BUF_SIZE
+// const NUM_FRAMES = 32		// Chosen arbitrarily. Change later
 
-func streamVideo(client pb.VideoRouteClient, ctx context.Context) error {
+
+// Edit so that we can stream indefinitely, rather than sending a finite, pre-defined number of frames
+func streamVideo(client pb.VideoRouteClient, ctx context.Context, num_frames int) error {
 	var frame pb.Frame
 	stream, err := client.StreamVideo(ctx)
 	if err != nil {
 		log.Fatalf("%v.StreamVideo(_) = _, %v", client, err)
 	}
-	for i := 0; i < NUM_TEST_FRAMES; i++{		// Iterate through frames
-		// Get frame
-		for j := 0; j < CHUNKS_PER_FRAME; j++ {	// Iterate through chunks in frame
-			frame.Chunk = []byte{byte(j)}		// Should be byte array of pixels of size READ_BUF_SIZE
-			frame.LastChunk = (j == CHUCKS_PER_FRAME - 1)
+	for i := 0; i < num_frames; i++{		// Iterate through frames (change looping condition)
+		// Get frame:
+		// Capture, compress frame, put in buffer
+		buf := make([]byte, IMG_HEIGHT_COMP * IMG_WIDTH_COMP)	// This buffer is supposed to hold the frame
+
+		for j := 0; j < CHUNKS_PER_FRAME; j++ {								// Iterate through chunks in frame
+			//Put if statement so that we check when we need to stop streaming.
+
+			frame.Chunk = buf[j * READ_BUF_SIZE : (j + 1) * READ_BUF_SIZE]	// Should be byte array of pixels of size READ_BUF_SIZE
+			frame.LastChunk = (j == CHUNKS_PER_FRAME - 1)
 			frame.Number = int32(i)
 			req := pb.Video{Frame: &frame, Name: "Test"}
 			if err := stream.Send(&req); err != nil && err != io.EOF {
@@ -46,6 +53,7 @@ func streamVideo(client pb.VideoRouteClient, ctx context.Context) error {
 func main() {
 	ServerAddress := ":9000"
 	motion := false
+	stream := false
 
 	conn, err := grpc.Dial(ServerAddress, grpc.WithInsecure(), grpc.WithBlock())
 	if err != nil {
@@ -62,6 +70,15 @@ func main() {
 		for {
 			// make request to see if client asking for video feed
 			if motion == true {	// Change break condition so that we break from loop if motion detected or client asks for videofeed
+				if err = streamVideo(c, ctx, 10); err != nil {
+					log.Fatalf("Couldn't stream: %v", err)
+				}
+				break
+			}
+			if stream == true {
+				if err = streamVideo(c, ctx, 0); err != nil {		// num_frames == 0 => we want indefinite stream
+					log.Fatalf("Couldn't stream: %v", err)
+				}
 				break
 			}
 		}
@@ -71,9 +88,6 @@ func main() {
 		 Store in buffer
 		 Send to backend
 		*/
-
-		if err := streamVideo(c, ctx); err != nil {
-			log.Fatalf("Error with streaming: %v", err)
-		}
+		
 	}
 }
