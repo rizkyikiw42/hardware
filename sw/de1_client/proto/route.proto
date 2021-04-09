@@ -23,6 +23,41 @@ message FaceVerificationReq {
 message FaceVerificationResp {
   string user = 1;
   float confidence = 2;
+  bool accept = 3;
+}
+
+
+message HistoryRecord{
+  string name = 1;
+  string status = 2;
+  string imageLocation = 3;
+  string time = 4;
+}
+
+message HistoryRecords{
+  repeated HistoryRecord record = 1;
+}
+
+message ImageLocation{
+  string address = 1;
+}
+
+
+
+message Timestamp{
+  string starttime = 1;
+  string endtime = 2;
+}
+
+message Permission{
+  string usernames = 1;  //could be none, if the user is not a truested user
+  int64 userid = 2;     // used to update the recorded table status
+  bool permit = 3;     //  if agree to access set to 1, rejected set to 0
+}
+
+message DeviceVerify{
+  string deviceid = 1;
+  string token = 2;
 }
 
 service Route {
@@ -30,6 +65,21 @@ service Route {
   rpc UpdateTrustedUser(stream User) returns (Empty) {}
   rpc VerifyUserFace(stream FaceVerificationReq) returns (FaceVerificationResp) {}
   rpc RemoveTrustedUser(User) returns (Empty) {}
-  rpc GetUserPhoto(User) returns(stream Photo) {}
+  rpc GetUserPhoto(User) returns (stream Photo) {}
   rpc GetAllUserNames(Empty) returns (UserNames) {}
+
+
+  //history record and permission
+  rpc  GetHistoryRecorded(Timestamp) returns (HistoryRecords){}
+  rpc  GetHistoryImage(ImageLocation) returns (stream Photo){}
+  rpc  DeleteRecords(ImageLocation) returns (Empty){}
+  //send permission
+  rpc  GivePermission(Permission) returns (Empty){}
+  
+  //get the latest image when app gets the notification 
+  rpc GetLatestImage(Empty) returns (stream Photo){}
+
+  //update the device token 
+  rpc UpdateDeviceToken(DeviceVerify) returns (Empty){}
+
 }

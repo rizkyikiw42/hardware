@@ -24,6 +24,16 @@ type RouteClient interface {
 	RemoveTrustedUser(ctx context.Context, in *User, opts ...grpc.CallOption) (*Empty, error)
 	GetUserPhoto(ctx context.Context, in *User, opts ...grpc.CallOption) (Route_GetUserPhotoClient, error)
 	GetAllUserNames(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*UserNames, error)
+	//history record and permission
+	GetHistoryRecorded(ctx context.Context, in *Timestamp, opts ...grpc.CallOption) (*HistoryRecords, error)
+	GetHistoryImage(ctx context.Context, in *ImageLocation, opts ...grpc.CallOption) (Route_GetHistoryImageClient, error)
+	DeleteRecords(ctx context.Context, in *ImageLocation, opts ...grpc.CallOption) (*Empty, error)
+	//send permission
+	GivePermission(ctx context.Context, in *Permission, opts ...grpc.CallOption) (*Empty, error)
+	//get the latest image when app gets the notification
+	GetLatestImage(ctx context.Context, in *Empty, opts ...grpc.CallOption) (Route_GetLatestImageClient, error)
+	//update the device token
+	UpdateDeviceToken(ctx context.Context, in *DeviceVerify, opts ...grpc.CallOption) (*Empty, error)
 }
 
 type routeClient struct {
@@ -186,6 +196,106 @@ func (c *routeClient) GetAllUserNames(ctx context.Context, in *Empty, opts ...gr
 	return out, nil
 }
 
+func (c *routeClient) GetHistoryRecorded(ctx context.Context, in *Timestamp, opts ...grpc.CallOption) (*HistoryRecords, error) {
+	out := new(HistoryRecords)
+	err := c.cc.Invoke(ctx, "/route.Route/GetHistoryRecorded", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *routeClient) GetHistoryImage(ctx context.Context, in *ImageLocation, opts ...grpc.CallOption) (Route_GetHistoryImageClient, error) {
+	stream, err := c.cc.NewStream(ctx, &Route_ServiceDesc.Streams[4], "/route.Route/GetHistoryImage", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &routeGetHistoryImageClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type Route_GetHistoryImageClient interface {
+	Recv() (*Photo, error)
+	grpc.ClientStream
+}
+
+type routeGetHistoryImageClient struct {
+	grpc.ClientStream
+}
+
+func (x *routeGetHistoryImageClient) Recv() (*Photo, error) {
+	m := new(Photo)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+func (c *routeClient) DeleteRecords(ctx context.Context, in *ImageLocation, opts ...grpc.CallOption) (*Empty, error) {
+	out := new(Empty)
+	err := c.cc.Invoke(ctx, "/route.Route/DeleteRecords", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *routeClient) GivePermission(ctx context.Context, in *Permission, opts ...grpc.CallOption) (*Empty, error) {
+	out := new(Empty)
+	err := c.cc.Invoke(ctx, "/route.Route/GivePermission", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *routeClient) GetLatestImage(ctx context.Context, in *Empty, opts ...grpc.CallOption) (Route_GetLatestImageClient, error) {
+	stream, err := c.cc.NewStream(ctx, &Route_ServiceDesc.Streams[5], "/route.Route/GetLatestImage", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &routeGetLatestImageClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type Route_GetLatestImageClient interface {
+	Recv() (*Photo, error)
+	grpc.ClientStream
+}
+
+type routeGetLatestImageClient struct {
+	grpc.ClientStream
+}
+
+func (x *routeGetLatestImageClient) Recv() (*Photo, error) {
+	m := new(Photo)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+func (c *routeClient) UpdateDeviceToken(ctx context.Context, in *DeviceVerify, opts ...grpc.CallOption) (*Empty, error) {
+	out := new(Empty)
+	err := c.cc.Invoke(ctx, "/route.Route/UpdateDeviceToken", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // RouteServer is the server API for Route service.
 // All implementations must embed UnimplementedRouteServer
 // for forward compatibility
@@ -196,6 +306,16 @@ type RouteServer interface {
 	RemoveTrustedUser(context.Context, *User) (*Empty, error)
 	GetUserPhoto(*User, Route_GetUserPhotoServer) error
 	GetAllUserNames(context.Context, *Empty) (*UserNames, error)
+	//history record and permission
+	GetHistoryRecorded(context.Context, *Timestamp) (*HistoryRecords, error)
+	GetHistoryImage(*ImageLocation, Route_GetHistoryImageServer) error
+	DeleteRecords(context.Context, *ImageLocation) (*Empty, error)
+	//send permission
+	GivePermission(context.Context, *Permission) (*Empty, error)
+	//get the latest image when app gets the notification
+	GetLatestImage(*Empty, Route_GetLatestImageServer) error
+	//update the device token
+	UpdateDeviceToken(context.Context, *DeviceVerify) (*Empty, error)
 	mustEmbedUnimplementedRouteServer()
 }
 
@@ -220,6 +340,24 @@ func (UnimplementedRouteServer) GetUserPhoto(*User, Route_GetUserPhotoServer) er
 }
 func (UnimplementedRouteServer) GetAllUserNames(context.Context, *Empty) (*UserNames, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetAllUserNames not implemented")
+}
+func (UnimplementedRouteServer) GetHistoryRecorded(context.Context, *Timestamp) (*HistoryRecords, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetHistoryRecorded not implemented")
+}
+func (UnimplementedRouteServer) GetHistoryImage(*ImageLocation, Route_GetHistoryImageServer) error {
+	return status.Errorf(codes.Unimplemented, "method GetHistoryImage not implemented")
+}
+func (UnimplementedRouteServer) DeleteRecords(context.Context, *ImageLocation) (*Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteRecords not implemented")
+}
+func (UnimplementedRouteServer) GivePermission(context.Context, *Permission) (*Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GivePermission not implemented")
+}
+func (UnimplementedRouteServer) GetLatestImage(*Empty, Route_GetLatestImageServer) error {
+	return status.Errorf(codes.Unimplemented, "method GetLatestImage not implemented")
+}
+func (UnimplementedRouteServer) UpdateDeviceToken(context.Context, *DeviceVerify) (*Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateDeviceToken not implemented")
 }
 func (UnimplementedRouteServer) mustEmbedUnimplementedRouteServer() {}
 
@@ -369,6 +507,120 @@ func _Route_GetAllUserNames_Handler(srv interface{}, ctx context.Context, dec fu
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Route_GetHistoryRecorded_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Timestamp)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RouteServer).GetHistoryRecorded(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/route.Route/GetHistoryRecorded",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RouteServer).GetHistoryRecorded(ctx, req.(*Timestamp))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Route_GetHistoryImage_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(ImageLocation)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(RouteServer).GetHistoryImage(m, &routeGetHistoryImageServer{stream})
+}
+
+type Route_GetHistoryImageServer interface {
+	Send(*Photo) error
+	grpc.ServerStream
+}
+
+type routeGetHistoryImageServer struct {
+	grpc.ServerStream
+}
+
+func (x *routeGetHistoryImageServer) Send(m *Photo) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func _Route_DeleteRecords_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ImageLocation)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RouteServer).DeleteRecords(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/route.Route/DeleteRecords",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RouteServer).DeleteRecords(ctx, req.(*ImageLocation))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Route_GivePermission_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Permission)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RouteServer).GivePermission(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/route.Route/GivePermission",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RouteServer).GivePermission(ctx, req.(*Permission))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Route_GetLatestImage_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(Empty)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(RouteServer).GetLatestImage(m, &routeGetLatestImageServer{stream})
+}
+
+type Route_GetLatestImageServer interface {
+	Send(*Photo) error
+	grpc.ServerStream
+}
+
+type routeGetLatestImageServer struct {
+	grpc.ServerStream
+}
+
+func (x *routeGetLatestImageServer) Send(m *Photo) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func _Route_UpdateDeviceToken_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeviceVerify)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RouteServer).UpdateDeviceToken(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/route.Route/UpdateDeviceToken",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RouteServer).UpdateDeviceToken(ctx, req.(*DeviceVerify))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Route_ServiceDesc is the grpc.ServiceDesc for Route service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -383,6 +635,22 @@ var Route_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetAllUserNames",
 			Handler:    _Route_GetAllUserNames_Handler,
+		},
+		{
+			MethodName: "GetHistoryRecorded",
+			Handler:    _Route_GetHistoryRecorded_Handler,
+		},
+		{
+			MethodName: "DeleteRecords",
+			Handler:    _Route_DeleteRecords_Handler,
+		},
+		{
+			MethodName: "GivePermission",
+			Handler:    _Route_GivePermission_Handler,
+		},
+		{
+			MethodName: "UpdateDeviceToken",
+			Handler:    _Route_UpdateDeviceToken_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{
@@ -406,6 +674,16 @@ var Route_ServiceDesc = grpc.ServiceDesc{
 			Handler:       _Route_GetUserPhoto_Handler,
 			ServerStreams: true,
 		},
+		{
+			StreamName:    "GetHistoryImage",
+			Handler:       _Route_GetHistoryImage_Handler,
+			ServerStreams: true,
+		},
+		{
+			StreamName:    "GetLatestImage",
+			Handler:       _Route_GetLatestImage_Handler,
+			ServerStreams: true,
+		},
 	},
-	Metadata: "route.proto",
+	Metadata: "proto/route.proto",
 }

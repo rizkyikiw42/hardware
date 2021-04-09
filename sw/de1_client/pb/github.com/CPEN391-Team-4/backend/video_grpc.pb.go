@@ -20,6 +20,10 @@ const _ = grpc.SupportPackageIsVersion7
 type VideoRouteClient interface {
 	StreamVideo(ctx context.Context, opts ...grpc.CallOption) (VideoRoute_StreamVideoClient, error)
 	PullVideoStream(ctx context.Context, in *PullVideoStreamReq, opts ...grpc.CallOption) (VideoRoute_PullVideoStreamClient, error)
+	// app sends a end stream request to server, to set the request to false.
+	EndPullVideoStream(ctx context.Context, in *EndPullVideoStreamReq, opts ...grpc.CallOption) (*EmptyVideoResponse, error)
+	//a grpc call from de1 to set up the connection, and constantly receive state from server.
+	RequestToStream(ctx context.Context, in *InitialConnection, opts ...grpc.CallOption) (VideoRoute_RequestToStreamClient, error)
 }
 
 type videoRouteClient struct {
@@ -96,12 +100,57 @@ func (x *videoRoutePullVideoStreamClient) Recv() (*PullVideoStreamResp, error) {
 	return m, nil
 }
 
+func (c *videoRouteClient) EndPullVideoStream(ctx context.Context, in *EndPullVideoStreamReq, opts ...grpc.CallOption) (*EmptyVideoResponse, error) {
+	out := new(EmptyVideoResponse)
+	err := c.cc.Invoke(ctx, "/video.VideoRoute/EndPullVideoStream", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *videoRouteClient) RequestToStream(ctx context.Context, in *InitialConnection, opts ...grpc.CallOption) (VideoRoute_RequestToStreamClient, error) {
+	stream, err := c.cc.NewStream(ctx, &VideoRoute_ServiceDesc.Streams[2], "/video.VideoRoute/RequestToStream", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &videoRouteRequestToStreamClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type VideoRoute_RequestToStreamClient interface {
+	Recv() (*Streamrequest, error)
+	grpc.ClientStream
+}
+
+type videoRouteRequestToStreamClient struct {
+	grpc.ClientStream
+}
+
+func (x *videoRouteRequestToStreamClient) Recv() (*Streamrequest, error) {
+	m := new(Streamrequest)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 // VideoRouteServer is the server API for VideoRoute service.
 // All implementations must embed UnimplementedVideoRouteServer
 // for forward compatibility
 type VideoRouteServer interface {
 	StreamVideo(VideoRoute_StreamVideoServer) error
 	PullVideoStream(*PullVideoStreamReq, VideoRoute_PullVideoStreamServer) error
+	// app sends a end stream request to server, to set the request to false.
+	EndPullVideoStream(context.Context, *EndPullVideoStreamReq) (*EmptyVideoResponse, error)
+	//a grpc call from de1 to set up the connection, and constantly receive state from server.
+	RequestToStream(*InitialConnection, VideoRoute_RequestToStreamServer) error
 	mustEmbedUnimplementedVideoRouteServer()
 }
 
@@ -114,6 +163,12 @@ func (UnimplementedVideoRouteServer) StreamVideo(VideoRoute_StreamVideoServer) e
 }
 func (UnimplementedVideoRouteServer) PullVideoStream(*PullVideoStreamReq, VideoRoute_PullVideoStreamServer) error {
 	return status.Errorf(codes.Unimplemented, "method PullVideoStream not implemented")
+}
+func (UnimplementedVideoRouteServer) EndPullVideoStream(context.Context, *EndPullVideoStreamReq) (*EmptyVideoResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method EndPullVideoStream not implemented")
+}
+func (UnimplementedVideoRouteServer) RequestToStream(*InitialConnection, VideoRoute_RequestToStreamServer) error {
+	return status.Errorf(codes.Unimplemented, "method RequestToStream not implemented")
 }
 func (UnimplementedVideoRouteServer) mustEmbedUnimplementedVideoRouteServer() {}
 
@@ -175,13 +230,57 @@ func (x *videoRoutePullVideoStreamServer) Send(m *PullVideoStreamResp) error {
 	return x.ServerStream.SendMsg(m)
 }
 
+func _VideoRoute_EndPullVideoStream_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(EndPullVideoStreamReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(VideoRouteServer).EndPullVideoStream(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/video.VideoRoute/EndPullVideoStream",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(VideoRouteServer).EndPullVideoStream(ctx, req.(*EndPullVideoStreamReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _VideoRoute_RequestToStream_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(InitialConnection)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(VideoRouteServer).RequestToStream(m, &videoRouteRequestToStreamServer{stream})
+}
+
+type VideoRoute_RequestToStreamServer interface {
+	Send(*Streamrequest) error
+	grpc.ServerStream
+}
+
+type videoRouteRequestToStreamServer struct {
+	grpc.ServerStream
+}
+
+func (x *videoRouteRequestToStreamServer) Send(m *Streamrequest) error {
+	return x.ServerStream.SendMsg(m)
+}
+
 // VideoRoute_ServiceDesc is the grpc.ServiceDesc for VideoRoute service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var VideoRoute_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "video.VideoRoute",
 	HandlerType: (*VideoRouteServer)(nil),
-	Methods:     []grpc.MethodDesc{},
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "EndPullVideoStream",
+			Handler:    _VideoRoute_EndPullVideoStream_Handler,
+		},
+	},
 	Streams: []grpc.StreamDesc{
 		{
 			StreamName:    "StreamVideo",
@@ -193,6 +292,11 @@ var VideoRoute_ServiceDesc = grpc.ServiceDesc{
 			Handler:       _VideoRoute_PullVideoStream_Handler,
 			ServerStreams: true,
 		},
+		{
+			StreamName:    "RequestToStream",
+			Handler:       _VideoRoute_RequestToStream_Handler,
+			ServerStreams: true,
+		},
 	},
-	Metadata: "video.proto",
+	Metadata: "proto/video.proto",
 }

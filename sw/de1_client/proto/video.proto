@@ -4,6 +4,7 @@ option go_package = "github.com/CPEN391-Team-4/backend";
 
 package video;
 
+
 message Video {
   string name = 1;
   string encoding = 2;
@@ -25,7 +26,27 @@ message PullVideoStreamResp {
   bool closed = 2;
 }
 
+message EndPullVideoStreamReq{
+  string id = 1;
+}
+
+//a stream request to notify when the de1 need to start sending frames
+message Streamrequest{
+  bool request = 1;
+}
+
+//a request from de1 to first time set up the connection with server
+message InitialConnection{
+  bool setup = 1; 
+}
+
 service VideoRoute {
   rpc StreamVideo(stream Video) returns (EmptyVideoResponse) {}
   rpc PullVideoStream(PullVideoStreamReq) returns (stream PullVideoStreamResp) {}
+
+  // app sends a end stream request to server, to set the request to false.
+  rpc EndPullVideoStream(EndPullVideoStreamReq) returns(EmptyVideoResponse){}
+
+  //a grpc call from de1 to set up the connection, and constantly receive state from server.
+  rpc RequestToStream(InitialConnection) returns (stream Streamrequest){}
 }
