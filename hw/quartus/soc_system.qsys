@@ -115,6 +115,38 @@
          type = "String";
       }
    }
+   element pio_4
+   {
+      datum _sortIndex
+      {
+         value = "9";
+         type = "int";
+      }
+   }
+   element pio_4.s1
+   {
+      datum baseAddress
+      {
+         value = "1048672";
+         type = "String";
+      }
+   }
+   element pio_5
+   {
+      datum _sortIndex
+      {
+         value = "10";
+         type = "int";
+      }
+   }
+   element pio_5.s1
+   {
+      datum baseAddress
+      {
+         value = "1048688";
+         type = "String";
+      }
+   }
    element pll_0
    {
       datum _sortIndex
@@ -193,6 +225,16 @@
  <parameter name="useTestBenchNamingPattern" value="false" />
  <instanceScript></instanceScript>
  <interface name="clk" internal="clk_0.clk_in" type="clock" dir="end" />
+ <interface
+   name="hex_high_pio"
+   internal="pio_5.external_connection"
+   type="conduit"
+   dir="end" />
+ <interface
+   name="hex_low_pio"
+   internal="pio_4.external_connection"
+   type="conduit"
+   dir="end" />
  <interface name="hps" internal="hps_0.hps_io" type="conduit" dir="end" />
  <interface name="hps_ddr3" internal="hps_0.memory" type="conduit" dir="end" />
  <interface
@@ -814,6 +856,34 @@
   <parameter name="simDrivenValue" value="0" />
   <parameter name="width" value="1" />
  </module>
+ <module name="pio_4" kind="altera_avalon_pio" version="20.1" enabled="1">
+  <parameter name="bitClearingEdgeCapReg" value="false" />
+  <parameter name="bitModifyingOutReg" value="false" />
+  <parameter name="captureEdge" value="false" />
+  <parameter name="clockRate" value="50000000" />
+  <parameter name="direction" value="Output" />
+  <parameter name="edgeType" value="RISING" />
+  <parameter name="generateIRQ" value="false" />
+  <parameter name="irqType" value="LEVEL" />
+  <parameter name="resetValue" value="0" />
+  <parameter name="simDoTestBenchWiring" value="false" />
+  <parameter name="simDrivenValue" value="0" />
+  <parameter name="width" value="32" />
+ </module>
+ <module name="pio_5" kind="altera_avalon_pio" version="20.1" enabled="1">
+  <parameter name="bitClearingEdgeCapReg" value="false" />
+  <parameter name="bitModifyingOutReg" value="false" />
+  <parameter name="captureEdge" value="false" />
+  <parameter name="clockRate" value="50000000" />
+  <parameter name="direction" value="Output" />
+  <parameter name="edgeType" value="RISING" />
+  <parameter name="generateIRQ" value="false" />
+  <parameter name="irqType" value="LEVEL" />
+  <parameter name="resetValue" value="0" />
+  <parameter name="simDoTestBenchWiring" value="false" />
+  <parameter name="simDrivenValue" value="0" />
+  <parameter name="width" value="10" />
+ </module>
  <module name="pll_0" kind="altera_pll" version="20.1" enabled="1">
   <parameter name="debug_print_output" value="false" />
   <parameter name="debug_use_rbc_taf_method" value="false" />
@@ -1082,6 +1152,24 @@
    kind="avalon"
    version="20.1"
    start="hps_0.h2f_lw_axi_master"
+   end="pio_5.s1">
+  <parameter name="arbitrationPriority" value="1" />
+  <parameter name="baseAddress" value="0x00100070" />
+  <parameter name="defaultConnection" value="false" />
+ </connection>
+ <connection
+   kind="avalon"
+   version="20.1"
+   start="hps_0.h2f_lw_axi_master"
+   end="pio_4.s1">
+  <parameter name="arbitrationPriority" value="1" />
+  <parameter name="baseAddress" value="0x00100060" />
+  <parameter name="defaultConnection" value="false" />
+ </connection>
+ <connection
+   kind="avalon"
+   version="20.1"
+   start="hps_0.h2f_lw_axi_master"
    end="jpeg_0.slave">
   <parameter name="arbitrationPriority" value="1" />
   <parameter name="baseAddress" value="0x00100200" />
@@ -1101,6 +1189,8 @@
  <connection kind="clock" version="20.1" start="clk_0.clk" end="pio_2.clk" />
  <connection kind="clock" version="20.1" start="clk_0.clk" end="uart_0.clk" />
  <connection kind="clock" version="20.1" start="clk_0.clk" end="pio_3.clk" />
+ <connection kind="clock" version="20.1" start="clk_0.clk" end="pio_5.clk" />
+ <connection kind="clock" version="20.1" start="clk_0.clk" end="pio_4.clk" />
  <connection
    kind="clock"
    version="20.1"
@@ -1146,6 +1236,8 @@
    end="uart_0.reset" />
  <connection kind="reset" version="20.1" start="clk_0.clk_reset" end="pio_3.reset" />
  <connection kind="reset" version="20.1" start="clk_0.clk_reset" end="pll_0.reset" />
+ <connection kind="reset" version="20.1" start="clk_0.clk_reset" end="pio_5.reset" />
+ <connection kind="reset" version="20.1" start="clk_0.clk_reset" end="pio_4.reset" />
  <connection
    kind="reset"
    version="20.1"

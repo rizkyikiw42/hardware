@@ -274,7 +274,10 @@ module soc_system_top(
 
      .rfs_pio_export ( GPIO_0[8] ),
      .rfs_bt_uart_rxd ( GPIO_0[18] ),
-     .rfs_bt_uart_txd ( GPIO_0[19] )
+     .rfs_bt_uart_txd ( GPIO_0[19] ),
+
+     .hex_low_pio_export ( {HEX4[3:0], HEX3, HEx2, HEX1, HEX0} ),
+     .hex_high_pio_export ( {HEX5, HEX4[6:4]} )
   );
 
 endmodule
