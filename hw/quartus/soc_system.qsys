@@ -147,6 +147,22 @@
          type = "String";
       }
    }
+   element pio_6
+   {
+      datum _sortIndex
+      {
+         value = "11";
+         type = "int";
+      }
+   }
+   element pio_6.s1
+   {
+      datum baseAddress
+      {
+         value = "1048704";
+         type = "String";
+      }
+   }
    element pll_0
    {
       datum _sortIndex
@@ -245,6 +261,11 @@
  <interface
    name="led_pio"
    internal="pio_0.external_connection"
+   type="conduit"
+   dir="end" />
+ <interface
+   name="periph_pio"
+   internal="pio_6.external_connection"
    type="conduit"
    dir="end" />
  <interface name="reset" internal="clk_0.clk_in_reset" type="reset" dir="end" />
@@ -884,6 +905,20 @@
   <parameter name="simDrivenValue" value="0" />
   <parameter name="width" value="10" />
  </module>
+ <module name="pio_6" kind="altera_avalon_pio" version="20.1" enabled="1">
+  <parameter name="bitClearingEdgeCapReg" value="false" />
+  <parameter name="bitModifyingOutReg" value="false" />
+  <parameter name="captureEdge" value="false" />
+  <parameter name="clockRate" value="50000000" />
+  <parameter name="direction" value="Bidir" />
+  <parameter name="edgeType" value="RISING" />
+  <parameter name="generateIRQ" value="false" />
+  <parameter name="irqType" value="LEVEL" />
+  <parameter name="resetValue" value="0" />
+  <parameter name="simDoTestBenchWiring" value="false" />
+  <parameter name="simDrivenValue" value="0" />
+  <parameter name="width" value="8" />
+ </module>
  <module name="pll_0" kind="altera_pll" version="20.1" enabled="1">
   <parameter name="debug_print_output" value="false" />
   <parameter name="debug_use_rbc_taf_method" value="false" />
@@ -1170,6 +1205,15 @@
    kind="avalon"
    version="20.1"
    start="hps_0.h2f_lw_axi_master"
+   end="pio_6.s1">
+  <parameter name="arbitrationPriority" value="1" />
+  <parameter name="baseAddress" value="0x00100080" />
+  <parameter name="defaultConnection" value="false" />
+ </connection>
+ <connection
+   kind="avalon"
+   version="20.1"
+   start="hps_0.h2f_lw_axi_master"
    end="jpeg_0.slave">
   <parameter name="arbitrationPriority" value="1" />
   <parameter name="baseAddress" value="0x00100200" />
@@ -1191,6 +1235,7 @@
  <connection kind="clock" version="20.1" start="clk_0.clk" end="pio_3.clk" />
  <connection kind="clock" version="20.1" start="clk_0.clk" end="pio_5.clk" />
  <connection kind="clock" version="20.1" start="clk_0.clk" end="pio_4.clk" />
+ <connection kind="clock" version="20.1" start="clk_0.clk" end="pio_6.clk" />
  <connection
    kind="clock"
    version="20.1"
@@ -1238,6 +1283,7 @@
  <connection kind="reset" version="20.1" start="clk_0.clk_reset" end="pll_0.reset" />
  <connection kind="reset" version="20.1" start="clk_0.clk_reset" end="pio_5.reset" />
  <connection kind="reset" version="20.1" start="clk_0.clk_reset" end="pio_4.reset" />
+ <connection kind="reset" version="20.1" start="clk_0.clk_reset" end="pio_6.reset" />
  <connection
    kind="reset"
    version="20.1"
