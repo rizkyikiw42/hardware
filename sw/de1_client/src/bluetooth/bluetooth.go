@@ -54,8 +54,6 @@ func Listen() {
 	atCommand("AT+NAME=" + devName)
 	atCommand("AT+PSWD=0000")
 	atCommand("AT+ROLE=0")
-	addr, _ := atCommand("AT+ADDR?")
-	log.Printf("bluetooth address: %s", addr)
 	commandMode(false)
 
 	for {
@@ -64,7 +62,7 @@ func Listen() {
 			log.Println("error in RFS read: ", err)
 		}
 
-		log.Printf("got bluetooth cmd %v", resp)
+		log.Printf("got bluetooth cmd %v\n", resp)
 
 		switch resp {
 		case "devid":
@@ -72,7 +70,7 @@ func Listen() {
 			if err != nil {
 				panic(err)
 			}
-
+			log.Printf("devid: %s\n", devid)
 			rfsPort.Write([]byte(devid + "\r\n"))
 		}
 
