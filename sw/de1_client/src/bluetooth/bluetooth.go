@@ -52,8 +52,10 @@ func Listen() {
 	// Reset the device.
 	atCommand("AT+ORGL")
 	atCommand("AT+NAME=" + devName)
-	atCommand("AT+PSWD=9999")
+	atCommand("AT+PSWD=0000")
 	atCommand("AT+ROLE=0")
+	addr, _ := atCommand("AT+ADDR?")
+	log.Printf("bluetooth address: %s", addr)
 	commandMode(false)
 
 	for {
