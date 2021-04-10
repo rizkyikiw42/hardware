@@ -11,7 +11,7 @@ import (
 	"sync"
 
 	//"environment"
-	// cam "./src/camera"
+	cam "./src/camera"
 	pb "github.com/CPEN391-Team-4/backend/pb/proto"
 	"google.golang.org/grpc"
 )
@@ -25,7 +25,7 @@ const SERVER_ADDR = "192.53.126.159:9000"
 
 func streamVideo(client pb.VideoRouteClient, ctx context.Context, stop *bool, mu *sync.Mutex) error {
 	// Set up client
-	var frame pb.Frame
+	frame := pb.Frame{}
 	stream, err := client.StreamVideo(ctx)
 	if err != nil {
 		log.Fatalf("%v.StreamVideo(_) = _, %v", client, err)
@@ -34,7 +34,7 @@ func streamVideo(client pb.VideoRouteClient, ctx context.Context, stop *bool, mu
 	// Set up stream connection
 	var in pb.InitialConnection
 	in.Setup = true
-	streamReqClient, err := client.RequestToStream(ctx, &in)
+	// streamReqClient, err := client.RequestToStream(ctx, &in)
 	if err != nil {
 		log.Fatalf("%v.RequestToStream() got error %v, want %v", client, err, nil)
 	}
@@ -42,21 +42,21 @@ func streamVideo(client pb.VideoRouteClient, ctx context.Context, stop *bool, mu
 	i := 0
 	for {
 		// Check if stream is being requested
-		strReq, err := streamReqClient.Recv()
-		if err != nil {
-			log.Fatalf("%v.RequestToStream() got error %v, want %v", client, err, nil)
-		}
+		// strReq, err := streamReqClient.Recv()
+		// if err != nil {
+		// 	log.Fatalf("%v.RequestToStream() got error %v, want %v", client, err, nil)
+		// }
 
 		// If stream is requested, send a frame
-		if strReq.Request {
+		if true {
 
 			// Get frame
 			mu.Lock()
-			buf, err := ioutil.ReadFile("dog.jpg")
-			// cam.Start()
-			// buf, err := cam.Capture()
+			// buf, err := ioutil.ReadFile("dog.jpg")
+			cam.Start()
+			buf, err := cam.Capture()
 
-			// cam.Stop()
+			cam.Stop()
 			mu.Unlock()
 
 			if err != nil {
@@ -65,26 +65,25 @@ func streamVideo(client pb.VideoRouteClient, ctx context.Context, stop *bool, mu
 			
 			lastByte := 0
 			len := len(buf)
-			buf_end := false
 
 			for {
-				if lastByte + READ_BUF_SIZE < len {
+				if lastByte + READ_BUF_SIZE <= len {
 					frame.Chunk = buf[lastByte : lastByte + READ_BUF_SIZE]
 					frame.LastChunk = false
-					lastByte += READ_BUF_SIZE
 				} else {
 					frame.Chunk = buf[lastByte : ]
 					frame.LastChunk = true
-					buf_end = true
 				}
 				frame.Number = int32(i)
 
 				req := pb.Video{Frame: &frame, Name: "Test"}
-				if err := stream.Send(&req); err != nil {
+				if err := stream.Send(&req); err != nil && err != io.EOF {
 					log.Fatalf("%v.Send(%v) = %v", stream, &req, err)
 				}
 
-				if buf_end {
+				lastByte += READ_BUF_SIZE
+
+				if lastByte > len {
 					break
 				}
 			}
@@ -100,7 +99,7 @@ func streamVideo(client pb.VideoRouteClient, ctx context.Context, stop *bool, mu
 			log.Printf("Route summary: %v", reply)
 		}
 		if *stop {
-			streamReqClient.Close()
+			// streamReqClient.Close()
 			break
 		}
 	}
@@ -118,24 +117,24 @@ func verifyFace(client pb.RouteClient, ctx context.Context, buf []byte, mu *sync
 
 	lastByte := 0
 	len := len(buf)
-	buf_end, verified := false, false
+	verified := false
 
 	for {
 
-		if lastByte + READ_BUF_SIZE < len {
+		if lastByte + READ_BUF_SIZE <= len {
 			photo.Image = buf[lastByte : lastByte + READ_BUF_SIZE]
-			lastByte += READ_BUF_SIZE
 		} else {
 			photo.Image = buf[lastByte : ]
-			buf_end = true
 		}
 
 		req := pb.FaceVerificationReq{Photo: &photo}
 		if err := stream.Send(&req); err != nil {
 			log.Fatalf("%v.Send(%v) = %v", stream, &req, err)
 		}
+		
+		lastByte += READ_BUF_SIZE
 
-		if buf_end {
+		if lastByte > len {
 			break
 		}
 	}
@@ -157,8 +156,6 @@ func verifyFace(client pb.RouteClient, ctx context.Context, buf []byte, mu *sync
 func unlock(rc pb.RouteClient, ctx context.Context, stop *bool, mu *sync.Mutex) error {
 	// motion := false	// Change after connecting to PIO for sensor/button
 
-	// cam.Open()
-	// defer cam.Close()
 	// for {
 		// for {
 		// 	if motion {	// Change break condition so that we break from loop if motion detected
@@ -191,7 +188,7 @@ func unlock(rc pb.RouteClient, ctx context.Context, stop *bool, mu *sync.Mutex) 
 
 		if unlock {
 			// Call function to unlock door. Make sure function includes locking after 10 seconds
-			fmt.Printf("Unlocked!")
+			fmt.Printf("Unlocked!\n")
 		}
 
 	// 	if *stop {
@@ -211,7 +208,7 @@ func main() {
 		log.Fatalf("did not connect: %v", err)
 	}
 	defer conn.Close()
-	// vrc := pb.NewVideoRouteClient(conn)
+	vrc := pb.NewVideoRouteClient(conn)
 	rc := pb.NewRouteClient(conn)
 	fmt.Println(conn)
 
@@ -220,9 +217,12 @@ func main() {
 
 	stop := false
 
+	cam.Open()
+	defer cam.Close()
+
 	mutex := sync.Mutex{}
 	
-	// go streamVideo(vrc, ctx, &stop, &mutex)
+	go streamVideo(vrc, ctx, &stop, &mutex)
 	go unlock(rc, ctx, &stop, &mutex)
 
 	reader := bufio.NewReader(os.Stdin)
