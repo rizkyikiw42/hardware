@@ -193,8 +193,7 @@ func MonitorRequests(client pb.RouteClient, vidClient pb.VideoRouteClient,
 		for {
 			lockreq, err := lockStream.Recv()
 			if err != nil {
-				log.Println("error receiving lock request ", err)
-				continue
+				panic(err)
 			}
 
 			log.Println("locked: ", lockreq.Request)
@@ -205,8 +204,7 @@ func MonitorRequests(client pb.RouteClient, vidClient pb.VideoRouteClient,
 		for {
 			streamReq, err := requestStream.Recv()
 			if err != nil {
-				log.Println("error receiving stream request ", err)
-				continue
+				panic(err)
 			}
 
 			if streamReq.Request {
