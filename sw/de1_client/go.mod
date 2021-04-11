@@ -3,7 +3,7 @@ module github.com/CPEN391-Team-4/backend/sw/de1_client
 go 1.15
 
 require (
-	github.com/CPEN391-Team-4/backend v0.0.0-20210408221017-2037f00ef3fa // indirect
+	github.com/CPEN391-Team-4/backend v0.0.0-20210410030709-e2e7ed32449f // indirect
 	github.com/golang/protobuf v1.5.2
 	github.com/korandiz/v4l v1.0.2 // indirect
 	google.golang.org/api v0.43.0
