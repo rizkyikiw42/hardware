@@ -1,4 +1,4 @@
-module github.com/CPEN391-Team-4/backend/sw/de1_client
+module github.com/CPEN391-Team-4/hardware/sw/de1_client
 
 go 1.15
 
