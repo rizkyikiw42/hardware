@@ -11,28 +11,28 @@ import (
 	"github.com/korandiz/v4l/fmt/yuyv"
 )
 
-const JPEG_ACCEL_ENABLED = false
+const jpegAccelEnabled = false
 
-const CAMERA_DEV_PATH = "/dev/video0"
-const CAMERA_WIDTH = 640
-const CAMERA_HEIGHT = 480
-const CAMERA_FPS = 10
+const cameraDevPath = "/dev/video0"
+const cameraWidth = 640
+const cameraHeight = 480
+const CameraFPS = 10
 
-const JPEG_DEV_PATH = "/dev/team4_jpeg"
+const jpegDevPath = "/dev/team4_jpeg"
 
 // We use a global here, because we have a fixed hardware setup.
 var camera *v4l.Device
 var jpegCompressor *os.File
 
 func Open() {
-	cam, err := v4l.Open(CAMERA_DEV_PATH)
+	cam, err := v4l.Open(cameraDevPath)
 	camera = cam
 	if err != nil {
 		panic(err)
 	}
 
 	var format uint32
-	if JPEG_ACCEL_ENABLED {
+	if jpegAccelEnabled {
 		format = yuyv.FourCC
 	} else {
 		format = mjpeg.FourCC
@@ -40,9 +40,9 @@ func Open() {
 
 	camera.SetConfig(v4l.DeviceConfig{
 		Format: format,
-		Width:  CAMERA_WIDTH,
-		Height: CAMERA_HEIGHT,
-		FPS:    v4l.Frac{N: CAMERA_FPS, D: 1},
+		Width:  cameraWidth,
+		Height: cameraHeight,
+		FPS:    v4l.Frac{N: CameraFPS, D: 1},
 	})
 
 	// Necessary because our JPEG compressor supports only
@@ -52,8 +52,8 @@ func Open() {
 		panic(err)
 	}
 
-	if JPEG_ACCEL_ENABLED {
-		jpegCompressor, err = os.Open(JPEG_DEV_PATH)
+	if jpegAccelEnabled {
+		jpegCompressor, err = os.Open(jpegDevPath)
 		if err != nil {
 			panic(err)
 		}
@@ -83,7 +83,7 @@ func setControl(name string, value int32) error {
 }
 
 func Close() {
-	if JPEG_ACCEL_ENABLED {
+	if jpegAccelEnabled {
 		jpegCompressor.Close()
 	}
 
@@ -107,7 +107,7 @@ func Capture() ([]byte, error) {
 	dst := new(bytes.Buffer)
 	dst.ReadFrom(buf)
 
-	if !JPEG_ACCEL_ENABLED {
+	if !jpegAccelEnabled {
 		return dst.Bytes(), nil
 	}
 
@@ -118,8 +118,8 @@ func Capture() ([]byte, error) {
 func compressScan(raw []byte) []byte {
 	buf := new(bytes.Buffer)
 
-	binary.Write(buf, binary.LittleEndian, CAMERA_WIDTH)
-	binary.Write(buf, binary.LittleEndian, CAMERA_HEIGHT)
+	binary.Write(buf, binary.LittleEndian, cameraWidth)
+	binary.Write(buf, binary.LittleEndian, cameraHeight)
 	buf.Write(raw)
 
 	// The way the kernel driver works, we have to do one write
@@ -163,8 +163,8 @@ var jpeg_header = []byte{
 	0xC9, 0xCA, 0xD2, 0xD3, 0xD4, 0xD5, 0xD6, 0xD7, 0xD8, 0xD9, 0xDA, 0xE1, 0xE2, 0xE3, 0xE4, 0xE5,
 	0xE6, 0xE7, 0xE8, 0xE9, 0xEA, 0xF1, 0xF2, 0xF3, 0xF4, 0xF5, 0xF6, 0xF7, 0xF8, 0xF9, 0xFA, 0xFF,
 	0xC0, 0x00, 0x0B, 0x08,
-	(CAMERA_HEIGHT & 0xff00) >> 8, CAMERA_HEIGHT & 0xff,
-	(CAMERA_WIDTH & 0xff00) >> 8, CAMERA_WIDTH & 0xff,
+	(cameraHeight & 0xff00) >> 8, cameraHeight & 0xff,
+	(cameraWidth & 0xff00) >> 8, cameraWidth & 0xff,
 	0x01, 0x01, 0x11, 0x00, 0xFF, 0xDA, 0x00, 0x08, 0x01, 0x01, 0x00, 0x00, 0x3F, 0x00,
 }
 

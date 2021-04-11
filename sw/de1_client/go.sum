@@ -72,6 +72,8 @@ github.com/CPEN391-Team-4/backend v0.0.0-20210408005730-9e6aecf942c7 h1:PxqY7F1c
 github.com/CPEN391-Team-4/backend v0.0.0-20210408005730-9e6aecf942c7/go.mod h1:JaHeZKT+WkBXPFNh2rbAMhftRQauCQiKT745MckNY+4=
 github.com/CPEN391-Team-4/backend v0.0.0-20210408221017-2037f00ef3fa h1:k2h6oXl7ZUrYjBNVMMEbicaaDNgepR88IoGNv4oPrxk=
 github.com/CPEN391-Team-4/backend v0.0.0-20210408221017-2037f00ef3fa/go.mod h1:JaHeZKT+WkBXPFNh2rbAMhftRQauCQiKT745MckNY+4=
+github.com/CPEN391-Team-4/backend v0.0.0-20210411042158-be7a12d6d677 h1:75hrFm/GRu3ooIsRZDVBYV1foBah4XhC8cPHpJqBYDw=
+github.com/CPEN391-Team-4/backend v0.0.0-20210411042158-be7a12d6d677/go.mod h1:JaHeZKT+WkBXPFNh2rbAMhftRQauCQiKT745MckNY+4=
 github.com/brian-armstrong/gpio v0.0.0-20181227042754-72b0058bbbcb h1:VmtJv/dx6i7ze0RWn6iXfRyTEFdgK06+7elSCYec4Fg=
 github.com/brian-armstrong/gpio v0.0.0-20181227042754-72b0058bbbcb/go.mod h1:akEYRl6/10JSSoNEyjgoLKKrw1M8+uBh5xsQQzxXvHs=
 github.com/census-instrumentation/opencensus-proto v0.2.1 h1:glEXhBS5PSLLv4IXzLA5yPRVX4bilULVyxxbrfOtDAk=

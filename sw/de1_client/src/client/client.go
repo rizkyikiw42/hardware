@@ -1,8 +1,9 @@
 package main
 
 import (
-	"github.com/CPEN391-Team-4/backend/sw/de1_client/src/bluetooth"
 	"log"
+
+	"github.com/CPEN391-Team-4/backend/sw/de1_client/src/bluetooth"
 )
 
 func main() {
