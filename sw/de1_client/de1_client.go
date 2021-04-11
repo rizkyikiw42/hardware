@@ -1,17 +1,15 @@
 package main
 
 import (
-	"bufio"
 	"context"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
-	"os"
-	"sync"
+	"time"
 
 	//"environment"
-	cam "./src/camera"
+	// cam "./src/camera"
 	pb "github.com/CPEN391-Team-4/backend/pb/proto"
 	"google.golang.org/grpc"
 )
@@ -23,91 +21,118 @@ const CHUNKS_PER_FRAME = IMG_HEIGHT_COMP * IMG_WIDTH_COMP / READ_BUF_SIZE
 const NUM_TEST_FRAMES = 100
 const SERVER_ADDR = "192.53.126.159:9000"
 
-func streamVideo(client pb.VideoRouteClient, ctx context.Context, stop *bool, mu *sync.Mutex) error {
+func requestStream(client pb.VideoRouteClient, ctx context.Context, startStream chan bool,
+					streamUp chan bool, stop chan bool, errResp chan error) {
+
+	stream, err := client.RequestToStream(ctx)
+	if err != nil {
+		errResp <- err
+		return
+	}
+	go func() {
+		for {
+			log.Printf("requestStream recv pre")
+			resp, err := stream.Recv()
+			if err != nil {
+				errResp <- err
+				return
+			}
+			log.Printf("requestStream recv = %v", resp)
+
+			startStream <- resp.Request
+
+			log.Printf("requestStream startStream = %v", resp.Request)
+
+			<- streamUp
+
+			log.Printf("requestStream streamUp")
+
+			err = stream.Send(&pb.InitialConnection{Setup: true})
+
+			log.Printf("requestStream send = %v", true)
+			if err != nil {
+				errResp <- err
+				return
+			}
+		}
+	}()
+
+	<- stop
+	errResp <- stream.CloseSend()
+
+	return
+}
+
+func streamVideo(client pb.VideoRouteClient, ctx context.Context, startStream chan bool, streamUp chan bool, stop chan bool, errResp chan error) {
 	// Set up client
 	frame := pb.Frame{}
 	stream, err := client.StreamVideo(ctx)
 	if err != nil {
-		log.Fatalf("%v.StreamVideo(_) = _, %v", client, err)
+		errResp <- err
+		return
 	}
 
-	// Set up stream connection
-	var in pb.InitialConnection
-	in.Setup = true
-	// streamReqClient, err := client.RequestToStream(ctx, &in)
-	if err != nil {
-		log.Fatalf("%v.RequestToStream() got error %v, want %v", client, err, nil)
-	}
-
-	i := 0
-	for {
-		// Check if stream is being requested
-		// strReq, err := streamReqClient.Recv()
-		// if err != nil {
-		// 	log.Fatalf("%v.RequestToStream() got error %v, want %v", client, err, nil)
-		// }
-
-		// If stream is requested, send a frame
-		if true {
-
-			// Get frame
-			mu.Lock()
-			// buf, err := ioutil.ReadFile("dog.jpg")
-			cam.Start()
-			buf, err := cam.Capture()
-
-			cam.Stop()
-			mu.Unlock()
-
-			if err != nil {
-				log.Fatalf("failed to Capture image: %v", err)
+	go func() {
+		for {
+			startNow := <-startStream
+			if !startNow {
+				continue
 			}
-			
-			lastByte := 0
-			len := len(buf)
 
+			i := 0
 			for {
-				if lastByte + READ_BUF_SIZE <= len {
-					frame.Chunk = buf[lastByte : lastByte + READ_BUF_SIZE]
-					frame.LastChunk = false
-				} else {
-					frame.Chunk = buf[lastByte : ]
-					frame.LastChunk = true
-				}
-				frame.Number = int32(i)
-
-				req := pb.Video{Frame: &frame, Name: "Test"}
-				if err := stream.Send(&req); err != nil && err != io.EOF {
-					log.Fatalf("%v.Send(%v) = %v", stream, &req, err)
+				// Get frame
+				buf, err := ioutil.ReadFile("dog.jpg")
+				if err != nil {
+					errResp <- err
+					return
 				}
 
-				lastByte += READ_BUF_SIZE
+				lastByte := 0
+				length := len(buf)
 
-				if lastByte > len {
-					break
+				for {
+					if lastByte+READ_BUF_SIZE <= length {
+						frame.Chunk = buf[lastByte : lastByte+READ_BUF_SIZE]
+						frame.LastChunk = false
+					} else {
+						frame.Chunk = buf[lastByte:]
+						frame.LastChunk = true
+					}
+					frame.Number = int32(i)
+
+					req := pb.Video{Frame: &frame, Name: "De1 Test"}
+					if err := stream.Send(&req); err != nil && err != io.EOF {
+						log.Fatalf("%v.Send(%v) = %v", stream, &req, err)
+					}
+
+					lastByte += READ_BUF_SIZE
+
+					if lastByte > length {
+						break
+					}
 				}
+
+				if i == 0 {
+					streamUp <- true
+					log.Printf("streamVideo streamUp = %v", true)
+				}
+
+				log.Printf("streamVideo sentframe = %v", i)
+
+				i++
 			}
-			i++
-
-		} else {
-			i = 0
-
-			reply, err := stream.CloseAndRecv()
-			if err != nil && err != io.EOF {
-				log.Fatalf("%v.CloseAndRecv() got error %v, want %v", stream, err, nil)
-			}
-			log.Printf("Route summary: %v", reply)
 		}
-		if *stop {
-			// streamReqClient.Close()
-			break
-		}
-	}
-	
-	return nil
+	}()
+
+	<- stop
+
+	errResp <- stream.CloseSend()
+
+	return
 }
 
-func verifyFace(client pb.RouteClient, ctx context.Context, buf []byte, mu *sync.Mutex) (bool, error) {
+func verifyFace(client pb.RouteClient, ctx context.Context, buf []byte) (bool, error) {
 
 	var photo pb.Photo
 	stream, err := client.VerifyUserFace(ctx)
@@ -153,7 +178,7 @@ func verifyFace(client pb.RouteClient, ctx context.Context, buf []byte, mu *sync
 	return verified, nil
 }
 
-func unlock(rc pb.RouteClient, ctx context.Context, stop *bool, mu *sync.Mutex) error {
+func unlock(rc pb.RouteClient, ctx context.Context, stop *bool) error {
 	// motion := false	// Change after connecting to PIO for sensor/button
 
 	// for {
@@ -168,7 +193,6 @@ func unlock(rc pb.RouteClient, ctx context.Context, stop *bool, mu *sync.Mutex) 
 		Store in buffer
 		Call verifyFace
 		*/
-		mu.Lock()
 		// cam.Start()
 		// frame, err := cam.Capture()
 		frame, err := ioutil.ReadFile("johnny.jpg")
@@ -178,9 +202,7 @@ func unlock(rc pb.RouteClient, ctx context.Context, stop *bool, mu *sync.Mutex) 
 		}
 		// cam.Stop()
 
-		mu.Unlock()
-
-		unlock, err := verifyFace(rc, ctx, frame, mu)
+		unlock, err := verifyFace(rc, ctx, frame)
 
 		if err != nil {
 			log.Fatalf("failed to verify face: %v", err)
@@ -209,27 +231,35 @@ func main() {
 	}
 	defer conn.Close()
 	vrc := pb.NewVideoRouteClient(conn)
-	rc := pb.NewRouteClient(conn)
-	fmt.Println(conn)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	stop := false
+	// cam.Open()
+	// defer cam.Close()
 
-	cam.Open()
-	defer cam.Close()
+	startStream, streamUp, stopReq, errReq := make(chan bool), make(chan bool), make(chan bool), make(chan error)
+	go requestStream(vrc, ctx, startStream, streamUp, stopReq, errReq)
 
-	mutex := sync.Mutex{}
-	
-	go streamVideo(vrc, ctx, &stop, &mutex)
-	go unlock(rc, ctx, &stop, &mutex)
+	stopStream, errStream := make(chan bool), make(chan error)
+	go streamVideo(vrc, ctx, startStream, streamUp, stopStream, errStream)
 
-	reader := bufio.NewReader(os.Stdin)
-	toStop, _ := reader.ReadString('\n')
 
-	if toStop == "stop" {
-		stop = true
-	}
+	// go unlock(rc, ctx, &stop)
+
+	//reader := bufio.NewReader(os.Stdin)
+	//toStop, _ := reader.ReadString('\n')
+	//
+	//if toStop == "stop" {
+	//	stop = true
+	//}
+
+	<-time.After(60 * time.Second)
+
+	stopStream <- true
+	stopReq <- true
+
+	log.Printf("requestStream=%v", <-errReq)
+	log.Printf("streamVideo=%v", <-errStream)
 
 }
