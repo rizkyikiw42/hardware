@@ -12,7 +12,7 @@ import (
 func main() {
 	log.Println("starting up")
 
-	conn, err := grpc.Dial("127.0.0.1:9000", grpc.WithInsecure(), grpc.WithBlock())
+	conn, err := grpc.Dial("192.168.0.15:9000", grpc.WithInsecure(), grpc.WithBlock())
 	if err != nil {
 		panic(err)
 	}
@@ -23,7 +23,9 @@ func main() {
 
 	reqs := make(chan loop.LoopReq)
 	captureShutdown := make(chan struct{}, 1)
-	go loop.CaptureLoop(client, vidClient, reqs, captureShutdown)
+	streamState := make(chan bool, 1)
+	go loop.CaptureLoop(client, vidClient, reqs, streamState, captureShutdown)
+	go loop.MonitorRequests(client, vidClient, reqs, streamState)
 
 loop:
 	for {

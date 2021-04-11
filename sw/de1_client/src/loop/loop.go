@@ -32,9 +32,9 @@ const (
 // verifying/unlocking the door when motion is detected, and when we
 // just want to stream.
 func CaptureLoop(client pb.RouteClient, vidClient pb.VideoRouteClient,
-	reqs chan LoopReq, finished chan struct{}) {
-	// frameTicker := time.NewTicker(time.Second / camera.CameraFPS)
-	frameTicker := time.NewTicker(1 * time.Second)
+	reqs chan LoopReq, streamState chan bool, finished chan struct{}) {
+	frameTicker := time.NewTicker(time.Second / camera.CameraFPS)
+	// frameTicker := time.NewTicker(1 * time.Second)
 	verifyTicker := time.NewTicker(verifyTime)
 	motionTimer := time.NewTimer(0)
 
@@ -81,6 +81,7 @@ loop:
 					log.Println("tried to start streaming when already streaming")
 				} else {
 					streaming = true
+					streamState <- true
 					startStopStream()
 				}
 
@@ -89,6 +90,7 @@ loop:
 					log.Println("tried to stop streaming when not streaming")
 				} else if !motion {
 					streaming = false
+					streamState <- false
 					startStopStream()
 				}
 
@@ -176,7 +178,7 @@ loop:
 }
 
 func MonitorRequests(client pb.RouteClient, vidClient pb.VideoRouteClient,
-	loopReqs chan LoopReq) {
+	loopReqs chan LoopReq, streamState chan bool) {
 	lockStream, err := client.RequestToLock(context.Background())
 	if err != nil {
 		panic(err)
@@ -212,6 +214,13 @@ func MonitorRequests(client pb.RouteClient, vidClient pb.VideoRouteClient,
 			} else {
 				loopReqs <- StopStreamReq
 			}
+
+			// time.Sleep(100 * time.Millisecond)
+			state := <-streamState
+			requestStream.Send(&pb.InitialConnection{
+				Setup: state,
+			})
+			// log.Println("send stream state ", state)
 		}
 	}()
 }
