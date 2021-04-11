@@ -11,8 +11,6 @@ import (
 	"github.com/korandiz/v4l/fmt/yuyv"
 )
 
-const jpegAccelEnabled = false
-
 const cameraDevPath = "/dev/video0"
 const cameraWidth = 640
 const cameraHeight = 480
@@ -23,6 +21,7 @@ const jpegDevPath = "/dev/team4_jpeg"
 // We use a global here, because we have a fixed hardware setup.
 var camera *v4l.Device
 var jpegCompressor *os.File
+var jpegAccelEnabled bool
 
 func Open() {
 	cam, err := v4l.Open(cameraDevPath)
@@ -30,6 +29,9 @@ func Open() {
 	if err != nil {
 		panic(err)
 	}
+
+	_, err = os.Stat(jpegDevPath)
+	jpegAccelEnabled = !os.IsNotExist(err)
 
 	var format uint32
 	if jpegAccelEnabled {
