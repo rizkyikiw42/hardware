@@ -18,7 +18,7 @@ const CAMERA_WIDTH = 640
 const CAMERA_HEIGHT = 480
 const CAMERA_FPS = 10
 
-const JPEG_DEV_PATH = "/dev/team4ⱼpeg"
+const JPEG_DEV_PATH = "/dev/team4_jpeg"
 
 // We use a global here, because we have a fixed hardware setup.
 var camera *v4l.Device
