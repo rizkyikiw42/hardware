@@ -81,8 +81,8 @@ loop:
 					log.Println("tried to start streaming when already streaming")
 				} else {
 					streaming = true
-					streamState <- true
 					startStopStream()
+					streamState <- true
 				}
 
 			case StopStreamReq:
@@ -90,8 +90,8 @@ loop:
 					log.Println("tried to stop streaming when not streaming")
 				} else if !motion {
 					streaming = false
-					streamState <- false
 					startStopStream()
+					streamState <- false
 				}
 
 			case MotionReq:
