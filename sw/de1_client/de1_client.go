@@ -1,13 +1,11 @@
 package main
 
 import (
-	"bufio"
 	"context"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
-	"os"
 	"time"
 
 	//"environment"
@@ -23,163 +21,115 @@ const CHUNKS_PER_FRAME = IMG_HEIGHT_COMP * IMG_WIDTH_COMP / READ_BUF_SIZE
 const NUM_TEST_FRAMES = 100
 const SERVER_ADDR = "192.53.126.159:9000"
 
-func requestStream(client pb.VideoRouteClient, ctx context.Context, stop *bool) error {
-	reqStream, err := client.RequestToStream(ctx)
+func requestStream(client pb.VideoRouteClient, ctx context.Context, startStream chan bool,
+					streamUp chan bool, stop chan bool, errResp chan error) {
+
+	stream, err := client.RequestToStream(ctx)
 	if err != nil {
-		log.Fatalf("%v.RequestToStream(_) = _, %v", client, err)
+		errResp <- err
+		return
 	}
-	up := make(chan bool)
-	streaming := make(chan bool)
-	stopStreaming := make(chan bool)
-
 	go func() {
 		for {
-			streamNow := <- up
-			if streamNow {
-				log.Printf("streamVideo")
-				err := streamVideo(client, ctx, streaming, stopStreaming)
-				if err != nil {
-					log.Fatal(err)
-				}
-			}
-			if *stop {
-				break
-			}
-		}
-	}()
-
-	go func() {
-		for {
-			reply, err := reqStream.Recv()
-			if reply.Request {
-				up <- true
-				// stopStreaming <- false
-			}
-
-			log.Printf("Before streaming")
-			<- streaming
-			err = reqStream.Send(&pb.InitialConnection{Setup: true})
-			log.Printf("Send setup true")
+			log.Printf("requestStream recv pre")
+			resp, err := stream.Recv()
 			if err != nil {
-				log.Fatal(err)
+				errResp <- err
+				return
 			}
-			if *stop || !reply.Request {
-				// up <- false
-				stopStreaming <- true
-				if *stop {
-					break
-				}
+			log.Printf("requestStream recv = %v", resp)
+
+			startStream <- resp.Request
+
+			log.Printf("requestStream startStream = %v", resp.Request)
+
+			<- streamUp
+
+			log.Printf("requestStream streamUp")
+
+			err = stream.Send(&pb.InitialConnection{Setup: true})
+
+			log.Printf("requestStream send = %v", true)
+			if err != nil {
+				errResp <- err
+				return
 			}
 		}
 	}()
 
-	// go func() {
-	// 	for {
-	// 		streamNow := <-up
-	// 	}
-	// }()
+	<- stop
+	errResp <- stream.CloseSend()
 
-	// go func() {
-	// 	for {
-
-	// 	}
-	// }()
-
-	<-time.After(10 * time.Second)
-
-	pullStream, err := client.PullVideoStream(ctx, &pb.PullVideoStreamReq{Id: "default"})
-	if err != nil {
-		log.Fatalf("%v.PullVideoStream(_) = _, %v", client, err)
-	}
-
-	for {
-		reply, err := pullStream.Recv()
-		if err != nil {
-			if err == io.EOF {
-				break
-			}
-			log.Fatalf("%v.Recv() = %v", pullStream, err)
-		}
-		if reply.Video != nil && reply.Video.Frame != nil {
-			log.Printf("Recieved Frame.Number=%v", reply.Video.Frame.Number)
-		}
-
-		if reply.Closed {
-			log.Printf("Stream closed")
-			break
-		}
-	}
-
-	return nil
+	return
 }
 
-func streamVideo(client pb.VideoRouteClient, ctx context.Context, streaming chan bool, stopStreaming chan bool) error {
+func streamVideo(client pb.VideoRouteClient, ctx context.Context, startStream chan bool, streamUp chan bool, stop chan bool, errResp chan error) {
 	// Set up client
 	frame := pb.Frame{}
 	stream, err := client.StreamVideo(ctx)
 	if err != nil {
-		log.Fatalf("%v.StreamVideo(_) = _, %v", client, err)
+		errResp <- err
+		return
 	}
 
-	i := 0
-	for {
-		// Get frame
-		buf, err := ioutil.ReadFile("dog.jpg")
-		// cam.Start()
-		// buf, err := cam.Capture()
-		// cam.Stop()
-
-		if err != nil {
-			log.Fatalf("failed to Capture image: %v", err)
-		}
-		
-		lastByte := 0
-		len := len(buf)
-
+	go func() {
 		for {
-			if lastByte + READ_BUF_SIZE <= len {
-				frame.Chunk = buf[lastByte : lastByte + READ_BUF_SIZE]
-				frame.LastChunk = false
-			} else {
-				frame.Chunk = buf[lastByte : ]
-				frame.LastChunk = true
-			}
-			frame.Number = int32(i)
-
-			req := pb.Video{Frame: &frame, Name: "Test"}
-			if err := stream.Send(&req); err != nil && err != io.EOF {
-				log.Fatalf("%v.Send(%v) = %v", stream, &req, err)
+			startNow := <-startStream
+			if !startNow {
+				continue
 			}
 
-			lastByte += READ_BUF_SIZE
+			i := 0
+			for {
+				// Get frame
+				buf, err := ioutil.ReadFile("dog.jpg")
+				if err != nil {
+					errResp <- err
+					return
+				}
 
-			if lastByte > len {
-				break
+				lastByte := 0
+				length := len(buf)
+
+				for {
+					if lastByte+READ_BUF_SIZE <= length {
+						frame.Chunk = buf[lastByte : lastByte+READ_BUF_SIZE]
+						frame.LastChunk = false
+					} else {
+						frame.Chunk = buf[lastByte:]
+						frame.LastChunk = true
+					}
+					frame.Number = int32(i)
+
+					req := pb.Video{Frame: &frame, Name: "De1 Test"}
+					if err := stream.Send(&req); err != nil && err != io.EOF {
+						log.Fatalf("%v.Send(%v) = %v", stream, &req, err)
+					}
+
+					lastByte += READ_BUF_SIZE
+
+					if lastByte > length {
+						break
+					}
+				}
+
+				if i == 0 {
+					streamUp <- true
+					log.Printf("streamVideo streamUp = %v", true)
+				}
+
+				log.Printf("streamVideo sentframe = %v", i)
+
+				i++
 			}
 		}
+	}()
 
-		if i == 0 && stream != nil {
-			//
-			streaming <- true
-			//
-		}
+	<- stop
 
-		i++
+	errResp <- stream.CloseSend()
 
-		stop := <- stopStreaming
-		if stop {
-			// streamReqClient.Close()
-			break
-		}
-	}
-
-	reply, err := stream.CloseAndRecv()
-	if err != nil && err != io.EOF {
-		log.Fatalf("%v.CloseAndRecv() got error %v, want %v", stream, err, nil)
-	}
-	log.Printf("Route summary: %v", reply)
-	
-	return nil
+	return
 }
 
 func verifyFace(client pb.RouteClient, ctx context.Context, buf []byte) (bool, error) {
@@ -281,25 +231,35 @@ func main() {
 	}
 	defer conn.Close()
 	vrc := pb.NewVideoRouteClient(conn)
-	// rc := pb.NewRouteClient(conn)
-	fmt.Println(conn)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	stop := false
-
 	// cam.Open()
 	// defer cam.Close()
 
-	go requestStream(vrc, ctx, &stop)
+	startStream, streamUp, stopReq, errReq := make(chan bool), make(chan bool), make(chan bool), make(chan error)
+	go requestStream(vrc, ctx, startStream, streamUp, stopReq, errReq)
+
+	stopStream, errStream := make(chan bool), make(chan error)
+	go streamVideo(vrc, ctx, startStream, streamUp, stopStream, errStream)
+
+
 	// go unlock(rc, ctx, &stop)
 
-	reader := bufio.NewReader(os.Stdin)
-	toStop, _ := reader.ReadString('\n')
+	//reader := bufio.NewReader(os.Stdin)
+	//toStop, _ := reader.ReadString('\n')
+	//
+	//if toStop == "stop" {
+	//	stop = true
+	//}
 
-	if toStop == "stop" {
-		stop = true
-	}
+	<-time.After(60 * time.Second)
+
+	stopStream <- true
+	stopReq <- true
+
+	log.Printf("requestStream=%v", <-errReq)
+	log.Printf("streamVideo=%v", <-errStream)
 
 }
