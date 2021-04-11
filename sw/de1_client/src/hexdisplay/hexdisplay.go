@@ -1,8 +1,6 @@
 package hexdisplay
 
 import (
-	"time"
-
 	"github.com/brian-armstrong/gpio"
 )
 
@@ -26,15 +24,14 @@ func setDigit(hex int, digit int) {
 
 	var base uint
 	if hex == 4 {
-		// for i := uint(0); i < 4; i++ {
-		// 	pin := gpio.NewOutput(hexLowBase+i, (pattern>>i)&0x01 != 0)
-		// 	pin.Close()
-		// }
-		// for i := uint(0); i < 3; i++ {
-		// 	pin := gpio.NewOutput(hexHighBase+i, (pattern>>(i+4))&0x01 != 0)
-		// 	pin.Close()
-		// }
-
+		for i := uint(0); i < 4; i++ {
+			pin := gpio.NewOutput(hexLowBase+(i+28), (pattern>>i)&0x01 != 0)
+			pin.Close()
+		}
+		for i := uint(0); i < 3; i++ {
+			pin := gpio.NewOutput(hexHighBase+i, (pattern>>(i+4))&0x01 != 0)
+			pin.Close()
+		}
 		return
 	} else if hex < 4 {
 		base = uint(hexLowBase + hex*7)
@@ -49,12 +46,11 @@ func setDigit(hex int, digit int) {
 }
 
 func DisplayPin(num int) {
-	for i := 0; i < 10; i++ {
-		time.Sleep(500 * time.Millisecond)
-		setDigit(2, i)
+	for i := 0; i < 4; i++ {
+		setDigit(i, num%10)
+		num /= 10
 	}
-	// for i := 0; i < 4; i++ {
-	// 	setDigit(i, num%10)
-	// 	num /= 10
-	// }
+
+	setDigit(5, -1)
+	setDigit(4, -1)
 }

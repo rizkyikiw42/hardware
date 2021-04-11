@@ -3,13 +3,17 @@ package bluetooth
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"fmt"
 	"log"
+	"math/rand"
 	"net"
 	"strings"
 	"time"
 
 	"github.com/brian-armstrong/gpio"
 	"github.com/tarm/serial"
+
+	"github.com/CPEN391-Team-4/backend/sw/de1_client/src/hexdisplay"
 )
 
 const defaultNet = 2
@@ -34,6 +38,8 @@ func getDeviceID() (string, error) {
 var rfsPort *serial.Port
 var rfsPin gpio.Pin
 
+var bluetoothPin int
+
 // Listen for bluetooth connections and send inquiring phones our
 // device ID.
 func Listen() {
@@ -48,11 +54,18 @@ func Listen() {
 	rfsPin = gpio.NewOutput(rfsGpioNum, true)
 	defer rfsPin.Close()
 
+	// Generate a random pin.
+	rand.Seed(time.Now().UTC().UnixNano())
+	bluetoothPin := rand.Intn(10000)
+	log.Printf("generated pin %04d", bluetoothPin)
+	// And show it
+	hexdisplay.DisplayPin(bluetoothPin)
+
 	commandMode(true)
 	// Reset the device.
 	atCommand("AT+ORGL")
 	atCommand("AT+NAME=" + devName)
-	atCommand("AT+PSWD=0000")
+	atCommand(fmt.Sprintf("AT+PSWD=%04d", bluetoothPin))
 	atCommand("AT+ROLE=0")
 	commandMode(false)
 
