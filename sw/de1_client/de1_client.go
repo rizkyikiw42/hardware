@@ -20,6 +20,7 @@ const READ_BUF_SIZE = 16
 const CHUNKS_PER_FRAME = IMG_HEIGHT_COMP * IMG_WIDTH_COMP / READ_BUF_SIZE
 const NUM_TEST_FRAMES = 100
 const SERVER_ADDR = "192.53.126.159:9000"
+const LOCAL_SERVER_ADDR = "172.26.163.79:9000"
 
 func requestStream(client pb.VideoRouteClient, ctx context.Context, startStream chan bool,
 					streamUp chan bool, stop chan bool, errResp chan error) {
