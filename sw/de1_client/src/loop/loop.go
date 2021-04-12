@@ -9,6 +9,7 @@ import (
 	pb "github.com/CPEN391-Team-4/backend/pb/proto"
 	"github.com/CPEN391-Team-4/hardware/sw/de1_client/src/camera"
 	"github.com/CPEN391-Team-4/hardware/sw/de1_client/src/devid"
+	"github.com/CPEN391-Team-4/hardware/sw/de1_client/src/lock"
 )
 
 // How frequently to check for faces, when there's motion.
@@ -20,6 +21,9 @@ type LoopReq = int
 
 // How long to wake up for, when we detect motion.
 const motionTime = 4 * time.Second
+
+// How long to unlock the door for trusted users.
+const unlockDuration = 5 * time.Second
 
 const (
 	StartStreamReq = iota
@@ -182,6 +186,13 @@ loop:
 
 				log.Printf("trusted: %v, user: %s, confidence: %f",
 					resp.Accept, resp.User, resp.Confidence)
+				if resp.Accept && lock.LockEngaged {
+					lock.Lock(false)
+					go func() {
+						time.Sleep(unlockDuration)
+						lock.Lock(true)
+					}()
+				}
 			}
 		}
 	}
@@ -211,6 +222,7 @@ func MonitorRequests(client pb.RouteClient, vidClient pb.VideoRouteClient,
 			lockStream.Send(&pb.LockConnection{Setup: true})
 
 			log.Println("locked: ", lockreq.Request)
+			lock.Lock(lockreq.Request)
 		}
 	}()
 
@@ -227,14 +239,12 @@ func MonitorRequests(client pb.RouteClient, vidClient pb.VideoRouteClient,
 				loopReqs <- StopStreamReq
 			}
 
-			// time.Sleep(100 * time.Millisecond)
 			state := <-streamState
 			if state {
 				requestStream.Send(&pb.InitialConnection{
 					Setup: state,
 				})
 			}
-			// log.Println("send stream state ", state)
 		}
 	}()
 }
