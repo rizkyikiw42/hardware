@@ -199,6 +199,8 @@ func MonitorRequests(client pb.RouteClient, vidClient pb.VideoRouteClient,
 				panic(err)
 			}
 
+			lockStream.Send(&pb.LockConnection{Setup: true})
+
 			log.Println("locked: ", lockreq.Request)
 		}
 	}()
