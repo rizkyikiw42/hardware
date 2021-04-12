@@ -82,7 +82,6 @@ loop:
 				} else {
 					streaming = true
 					startStopStream()
-					streamState <- true
 				}
 
 			case StopStreamReq:
@@ -132,6 +131,10 @@ loop:
 				if err != nil {
 					log.Println("failed to send a frame ", err)
 					continue
+				}
+
+				if frameNum == 0 && !motion {
+					streamState <- true
 				}
 
 				frameNum++
@@ -215,9 +218,11 @@ func MonitorRequests(client pb.RouteClient, vidClient pb.VideoRouteClient,
 
 			// time.Sleep(100 * time.Millisecond)
 			state := <-streamState
-			requestStream.Send(&pb.InitialConnection{
-				Setup: state,
-			})
+			if state {
+				requestStream.Send(&pb.InitialConnection{
+					Setup: state,
+				})
+			}
 			// log.Println("send stream state ", state)
 		}
 	}()
