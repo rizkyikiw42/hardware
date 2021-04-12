@@ -8,6 +8,7 @@ import (
 
 	pb "github.com/CPEN391-Team-4/backend/pb/proto"
 	"github.com/CPEN391-Team-4/hardware/sw/de1_client/src/camera"
+	"github.com/CPEN391-Team-4/hardware/sw/de1_client/src/devid"
 )
 
 // How frequently to check for faces, when there's motion.
@@ -18,7 +19,7 @@ const verifyTime = 2 * time.Second
 type LoopReq = int
 
 // How long to wake up for, when we detect motion.
-const motionTime = 10 * time.Second
+const motionTime = 4 * time.Second
 
 const (
 	StartStreamReq = iota
@@ -48,26 +49,35 @@ func CaptureLoop(client pb.RouteClient, vidClient pb.VideoRouteClient,
 
 	camera.Open()
 	defer camera.Close()
-	camera.Start()
-	defer camera.Stop()
 
 	var buf []byte
 
-	// Every time we update the state of motion, or a request to
-	// stream, we call this.  It checks to see if the stream is
-	// already going, and starts/stops it accordingly.
+	// Every time we react to a request to stream, we call this.
+	// It checks to see if the stream is already going, and
+	// starts/stops it accordingly.
 	startStopStream := func() {
-		if !streaming && !motion && stream != nil {
+		if !streaming && stream != nil {
 			log.Println("stopped streaming")
+			camera.Stop()
 			stream.CloseAndRecv()
 			stream = nil
-		} else if (streaming && !motion || !streaming && motion) && stream == nil {
+		} else if streaming && stream == nil {
 			log.Println("started streaming")
+			camera.Start()
 			frameNum = 0
 			stream, err = vidClient.StreamVideo(context.Background())
 			if err != nil {
 				log.Println("failed to start streaming ", err)
+				return
 			}
+
+			err = stream.Send(&pb.Video{DeviceId: devid.DeviceID})
+			if err != nil {
+				log.Println("failed to send devid")
+				return
+			}
+
+			streamState <- true
 		}
 	}
 
@@ -97,7 +107,6 @@ loop:
 				log.Println("motion detected")
 				motion = true
 				motionTimer.Reset(motionTime)
-				startStopStream()
 
 			case QuitReq:
 				motion = false
@@ -109,10 +118,9 @@ loop:
 		case <-motionTimer.C:
 			log.Println("motion expired")
 			motion = false
-			startStopStream()
 
 		case <-frameTicker.C:
-			if streaming || motion {
+			if streaming {
 				buf, err = camera.Capture()
 				if err != nil {
 					log.Println("failed to capture a frame ", err)
@@ -133,17 +141,17 @@ loop:
 					continue
 				}
 
-				if frameNum == 0 && !motion {
-					streamState <- true
-				}
-
 				frameNum++
 			}
 
 		case <-verifyTicker.C:
 			if motion {
 				log.Println("checking for faces in the frame")
+				camera.Start()
+				// First image has artifacts.
+				camera.Capture()
 				buf, err = camera.Capture()
+				camera.Stop()
 				if err != nil {
 					log.Println("failed to capture a frame ", err)
 					continue
@@ -172,7 +180,8 @@ loop:
 					continue
 				}
 
-				log.Println("door lock: ", resp.Accept)
+				log.Printf("trusted: %v, user: %s, confidence: %f",
+					resp.Accept, resp.User, resp.Confidence)
 			}
 		}
 	}

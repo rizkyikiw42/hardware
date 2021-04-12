@@ -5,6 +5,8 @@ import (
 	"log"
 
 	pb "github.com/CPEN391-Team-4/backend/pb/proto"
+	"github.com/CPEN391-Team-4/hardware/sw/de1_client/src/bluetooth"
+	"github.com/CPEN391-Team-4/hardware/sw/de1_client/src/devid"
 	"github.com/CPEN391-Team-4/hardware/sw/de1_client/src/loop"
 	"google.golang.org/grpc"
 )
@@ -12,11 +14,15 @@ import (
 func main() {
 	log.Println("starting up")
 
+	devid.InitializeDeviceID()
+
 	conn, err := grpc.Dial("192.168.0.15:9000", grpc.WithInsecure(), grpc.WithBlock())
 	if err != nil {
 		panic(err)
 	}
 	defer conn.Close()
+
+	go bluetooth.Listen()
 
 	client := pb.NewRouteClient(conn)
 	vidClient := pb.NewVideoRouteClient(conn)

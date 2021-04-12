@@ -3,7 +3,7 @@ module github.com/CPEN391-Team-4/hardware/sw/de1_client
 go 1.15
 
 require (
-	github.com/CPEN391-Team-4/backend v0.0.0-20210411042158-be7a12d6d677 // indirect
+	github.com/CPEN391-Team-4/backend v0.0.0-20210412011801-1998878b732e // indirect
 	github.com/brian-armstrong/gpio v0.0.0-20181227042754-72b0058bbbcb // indirect
 	github.com/golang/protobuf v1.5.2
 	github.com/korandiz/v4l v1.0.2 // indirect
