@@ -54,6 +54,7 @@ func Listen() {
 	commandMode(false)
 
 	for {
+		// Check for response. Send response if valid
 		resp, err := readResponse()
 		if err != nil {
 			log.Println("error in RFS read: ", err)
@@ -69,6 +70,7 @@ func Listen() {
 	}
 }
 
+// Function to switch to command mode on RFS bluetooth
 func commandMode(on bool) {
 	if on {
 		rfsPin.High()
@@ -106,6 +108,7 @@ func readResponse() (string, error) {
 	return str[0 : len(str)-2], nil
 }
 
+// Function to execute command passed to it
 func atCommand(cmd string) (string, error) {
 	cmdBytes := []byte(cmd + "\r\n")
 	n, err := rfsPort.Write(cmdBytes)

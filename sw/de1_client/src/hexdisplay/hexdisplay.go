@@ -22,6 +22,7 @@ func setDigit(hex int, digit int) {
 		pattern = digits[digit]
 	}
 
+	// Check which HEX display to write to, and print the digit on the display
 	var base uint
 	if hex == 4 {
 		for i := uint(0); i < 4; i++ {
@@ -45,6 +46,7 @@ func setDigit(hex int, digit int) {
 	}
 }
 
+// Function to display a number on the DE1 HEX displays
 func DisplayPin(num int) {
 	for i := 0; i < 4; i++ {
 		setDigit(i, num%10)

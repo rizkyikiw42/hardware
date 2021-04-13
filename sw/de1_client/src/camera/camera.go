@@ -23,6 +23,7 @@ var camera *v4l.Device
 var jpegCompressor *os.File
 var jpegAccelEnabled bool
 
+// Function to open camera
 func Open() {
 	cam, err := v4l.Open(cameraDevPath)
 	camera = cam
@@ -34,12 +35,15 @@ func Open() {
 	jpegAccelEnabled = !os.IsNotExist(err)
 
 	var format uint32
+
+	// Change format of image based on whether we use hardware compression or not
 	if jpegAccelEnabled {
 		format = yuyv.FourCC
 	} else {
 		format = mjpeg.FourCC
 	}
 
+	// Configure camera
 	camera.SetConfig(v4l.DeviceConfig{
 		Format: format,
 		Width:  cameraWidth,
@@ -62,6 +66,7 @@ func Open() {
 	}
 }
 
+// Control camera. Take control to change, and value to change it to, as parameters
 func setControl(name string, value int32) error {
 	controls, err := camera.ListControls()
 	if err != nil {
@@ -69,6 +74,7 @@ func setControl(name string, value int32) error {
 	}
 
 	var cid *uint32
+	// Find matching control on list of camera controls
 	for _, control := range controls {
 		if control.Name == name {
 			cid = &control.CID
@@ -80,10 +86,12 @@ func setControl(name string, value int32) error {
 		return errors.New("Couldn't find control on camera.")
 	}
 
+	// Set to new value
 	err = camera.SetControl(*cid, value)
 	return err
 }
 
+// Shut off camera
 func Close() {
 	if jpegAccelEnabled {
 		jpegCompressor.Close()
@@ -92,27 +100,33 @@ func Close() {
 	camera.Close()
 }
 
+// Start camera for capture
 func Start() {
 	camera.TurnOn()
 }
 
+// Stop camera. Call before Close()
 func Stop() {
 	camera.TurnOff()
 }
 
+// Capture frame
 func Capture() ([]byte, error) {
 	buf, err := camera.Capture()
 	if err != nil {
 		return nil, err
 	}
 
+	// Store image in buffer in memory
 	dst := new(bytes.Buffer)
 	dst.ReadFrom(buf)
 
+	// Send buffer if hardware compression is disabled
 	if !jpegAccelEnabled {
 		return dst.Bytes(), nil
 	}
 
+	// Send compressed buffer if hardware compression enabled
 	return compressImage(dst.Bytes()), nil
 }
 
