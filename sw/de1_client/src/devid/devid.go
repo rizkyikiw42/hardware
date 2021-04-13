@@ -11,6 +11,7 @@ const defaultNet = 2
 
 var DeviceID string
 
+// Initialize device ID for initial set-up with app
 func InitializeDeviceID() {
 	iface, err := net.InterfaceByIndex(defaultNet)
 	if err != nil {

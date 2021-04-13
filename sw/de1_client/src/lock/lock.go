@@ -10,15 +10,17 @@ var LockEngaged bool = true
 
 const lockGpioNum = 1825
 
+// Initialize GPIO connected to door lock
 func Init() {
 	lockPin = gpio.NewOutput(lockGpioNum, false)
 }
 
+// Lock or unlock door
 func Lock(engaged bool) {
 	LockEngaged = engaged
-	if engaged {
+	if engaged {	// Lock
 		lockPin.Low()
-	} else {
+	} else {		// Unlock
 		lockPin.High()
 	}
 }
