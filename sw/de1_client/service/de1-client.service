@@ -1,0 +1,13 @@
+[Unit]
+Description=DE1 Client
+After=network.target
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=1
+User=root
+ExecStart=/usr/local/bin/de1_client
+
+[Install]
+WantedBy=multi-user.target
