@@ -5,12 +5,18 @@ import (
 	"log"
 
 	pb "github.com/CPEN391-Team-4/backend/pb/proto"
+	"github.com/CPEN391-Team-4/hardware/sw/de1_client/src/bluetooth"
+	"github.com/CPEN391-Team-4/hardware/sw/de1_client/src/devid"
+	"github.com/CPEN391-Team-4/hardware/sw/de1_client/src/lock"
 	"github.com/CPEN391-Team-4/hardware/sw/de1_client/src/loop"
+	"github.com/CPEN391-Team-4/hardware/sw/de1_client/src/motion"
 	"google.golang.org/grpc"
 )
 
 func main() {
 	log.Println("starting up")
+
+	devid.InitializeDeviceID()
 
 	conn, err := grpc.Dial("192.168.0.15:9000", grpc.WithInsecure(), grpc.WithBlock())
 	if err != nil {
@@ -18,12 +24,19 @@ func main() {
 	}
 	defer conn.Close()
 
+	lock.Init()
+	motion.Init()
+
+	go bluetooth.Listen()
+
 	client := pb.NewRouteClient(conn)
 	vidClient := pb.NewVideoRouteClient(conn)
 
 	reqs := make(chan loop.LoopReq)
 	captureShutdown := make(chan struct{}, 1)
 	streamState := make(chan bool, 1)
+
+	go motion.MotionDetect(reqs)
 	go loop.CaptureLoop(client, vidClient, reqs, streamState, captureShutdown)
 	go loop.MonitorRequests(client, vidClient, reqs, streamState)
 

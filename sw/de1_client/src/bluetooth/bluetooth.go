@@ -1,39 +1,23 @@
 package bluetooth
 
 import (
-	"crypto/sha256"
-	"encoding/hex"
 	"fmt"
 	"log"
 	"math/rand"
-	"net"
 	"strings"
 	"time"
 
 	"github.com/brian-armstrong/gpio"
 	"github.com/tarm/serial"
 
-	"github.com/CPEN391-Team-4/backend/sw/de1_client/src/hexdisplay"
+	"github.com/CPEN391-Team-4/hardware/sw/de1_client/src/devid"
+	"github.com/CPEN391-Team-4/hardware/sw/de1_client/src/hexdisplay"
 )
 
-const defaultNet = 2
 const rfsDev = "/dev/ttyAL0"
 const rfsBaud = 38400
 const rfsGpioNum = 1920
 const devName = "FaceLock"
-
-func getDeviceID() (string, error) {
-	iface, err := net.InterfaceByIndex(defaultNet)
-	if err != nil {
-		return "", err
-	}
-
-	netaddr := []byte(iface.HardwareAddr.String())
-	hashaddr := sha256.Sum256(netaddr)
-	deviceid := hex.EncodeToString(hashaddr[0:7])
-
-	return deviceid, err
-}
 
 var rfsPort *serial.Port
 var rfsPin gpio.Pin
@@ -79,12 +63,7 @@ func Listen() {
 
 		switch resp {
 		case "devid":
-			devid, err := getDeviceID()
-			if err != nil {
-				panic(err)
-			}
-			log.Printf("devid: %s\n", devid)
-			rfsPort.Write([]byte(devid + "\r\n"))
+			rfsPort.Write([]byte(devid.DeviceID + "\r\n"))
 		}
 
 	}
