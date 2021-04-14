@@ -13,14 +13,14 @@ import (
 )
 
 // How frequently to check for faces, when there's motion.
-const verifyTime = 2 * time.Second
+const verifyTime = 4 * time.Second
 
 // A request to start/stop streaming, or to assert that motion is
 // present.
 type LoopReq = int
 
 // How long to wake up for, when we detect motion.
-const motionTime = 4 * time.Second
+const motionTime = 1 * time.Second
 
 // How long to unlock the door for trusted users.
 const unlockDuration = 5 * time.Second
@@ -89,7 +89,7 @@ func CaptureLoop(client pb.RouteClient, vidClient pb.VideoRouteClient,
 		}
 	}
 
-// Loop for streaming, face verification, motion detection
+	// Loop for streaming, face verification, motion detection
 loop:
 	for {
 		select {
@@ -103,7 +103,7 @@ loop:
 					streaming = true
 					startStopStream()
 				}
-			
+
 			// Stop stream if running
 			case StopStreamReq:
 				if !streaming {
@@ -120,7 +120,7 @@ loop:
 			case MotionReq:
 				log.Println("motion detected")
 				motion = true
-				motionTimer.Reset(motionTime)
+				// motionTimer.Reset(motionTime)
 
 			// Set motion and streaming flags to false, stop and running streams, and break out of loop
 			// when DE1 user requests to stop
@@ -169,12 +169,17 @@ loop:
 		case <-verifyTicker.C:
 			// If motion detected, capture a frame and send it to face verification stream
 			if motion {
+				motion = false
 				log.Println("checking for faces in the frame")
-				camera.Start()
+				if !streaming {
+					camera.Start()
+				}
 				// First image has artifacts.
 				camera.Capture()
 				buf, err = camera.Capture()
-				camera.Stop()
+				if !streaming {
+					camera.Stop()
+				}
 				if err != nil {
 					log.Println("failed to capture a frame ", err)
 					continue
