@@ -1,3 +1,11 @@
+// Accept pairs of bytes as input (higher 8 bits are the first byte),
+// and produce pairs of bytes as outputs in the same order.
+// Implements the "byte-stuffing" algorithm of JPEG: all 0xFF bytes in
+// the stream must be followed by a 0x00 byte to prevent the reader
+// from mistaking it for a header.
+//
+// Because we can accumulate leftovers when we get 0xFF bytes, it must
+// be flushed once we're done with the current stream.
 module byte_stuffer(input logic clk, input logic rst,
                     input logic ena_in, output logic ena_out,
                     input logic rdy_in, output logic rdy_out,

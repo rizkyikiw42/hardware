@@ -1,3 +1,6 @@
+// Accept an entire row without becoming non-ready, then provide it to
+// the next module on demand.  Useful for interfaving with the DCT
+// pipeline that expects entire contiguous rows.
 module row_buffer(input logic clk, input logic rst,
                   input logic ena_in, output logic ena_out,
                   input logic rdy_in, output logic rdy_out,

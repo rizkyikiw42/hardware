@@ -1,3 +1,5 @@
+// Column-and-row addressable memory that can simultaneously write
+// eone block and read another, then switch when done.
 module transpose_mem
   (input logic clk,
     input logic [11:0] S_in, output logic [11:0] S_out,

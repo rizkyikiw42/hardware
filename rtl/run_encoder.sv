@@ -1,3 +1,6 @@
+// Accepts, in zigzag order, the coefficients in a block.  Produces
+// "runs" consisting of how many zeroes (other than for the DC
+// coefficient) preceded this nonzero coefficient.
 module run_encoder(input logic clk, input logic rst,
                    input logic ena_in, output logic ena_out,
                    input logic rdy_in, output logic rdy_out,

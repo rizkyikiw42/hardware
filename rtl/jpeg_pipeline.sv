@@ -34,6 +34,8 @@ module jpeg_pipeline(input logic clk, input logic rst_ext,
    
    assign rst_pipeline = state == FLUSH_STUFF && waitcycles == 4'd3;
 
+   // We allow the final modules some time to complete their flush
+   // cycles before declaringg we're done with the stream.
    always_ff @(posedge clk)
      if (rst_ext) begin
         done_flush <= '0;

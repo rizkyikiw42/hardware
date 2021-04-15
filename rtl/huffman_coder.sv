@@ -1,3 +1,7 @@
+// Accepts runs (consisting of the number of preceding zeroes and a
+// coefficient), as well as a leading DC coefficient, and looks up the
+// appropriate code for the run length/coefficient size, then
+// ones-complement encodes the coefficient proper.
 module huffman_coder(input logic clk, input logic rst,
                      input logic ena_in, output logic ena_out,
                      input logic rdy_in, output logic rdy_out,

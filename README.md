@@ -1,3 +1,12 @@
+# Tests
+
+To run the hardware tests, you need Modelsim (the testbenches proper
+are in `tb/`), and Julia to create the test data (in the reference
+implementation directory `ref/`).
+
+To run the driver and software tests, you need the docker container as
+described below:
+
 # Build
 
 First, build the docker container containing the build tools.  This
@@ -31,7 +40,7 @@ The resulting SD card will be in `sw/sdcard.img`.`
 
 # References
 
-- Terasic,for the GHRD template (`soc_system_top.sv`).
+- Terasic, for the GHRD template (`soc_system_top.sv`).
 - Columbia University's CSEE 4840 website for information on how to
   incorporate linux and our hardware.
 - "Pipelined fast 2D DCT architecture for JPEG image compression" by

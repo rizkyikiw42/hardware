@@ -1,3 +1,11 @@
+// Accepts binary strings and concatenates them one after the other.
+// Binary strings are accepted as a pair, consisting of the length of
+// this string, and the bits, right-aligned (so that strings of length
+// >0 have a valid bit 0).  Every time we get 16 bits of valid output,
+// we emit those two bytes all together.  Since we produce leftover,
+// when the stream is done, we must flush.
+// 
+// Example:
 // Inputs: 10000000001 1000001 <flush>
 // Outputs: 1000000000110000 0100000000000000
 module code_shifter

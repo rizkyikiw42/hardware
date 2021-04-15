@@ -1,5 +1,7 @@
-// Because we're connected to the next DCT module, we write 8 pixels
-// when we get one rdy.
+// Accept pixels from one half of the DCT in row-major ordering, then
+// reading them back out in column-major ordering for the next half,
+// completing the algorithm.  Because we're connected to the next DCT
+// module, we write 8 pixels when we get one rdy.
 module transpose_buffer
   (input logic clk, input logic rst, 
    input logic ena_in, output logic ena_out,

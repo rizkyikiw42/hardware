@@ -1,3 +1,4 @@
+// Simple, modelsim-friendly D flip-flop with enable.
 module vdffe
   #(parameter WIDTH=8)
    (input logic clk, rst, ena,

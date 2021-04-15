@@ -1,3 +1,6 @@
+// Accepts WIDTH pixels serially, then on the final clock cycle makes
+// them all available at once on the parallel output.  They are kept
+// available until the next row is completely pushed in.
 module pingpong_buffer
   #(parameter WIDTH=8)
    (input logic clk, rst, ena_in, shiftout,
